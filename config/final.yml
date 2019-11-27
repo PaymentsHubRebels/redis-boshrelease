@@ -1,6 +1,6 @@
 ---
+name: redis
 blobstore:
-  provider: s3
+  provider: local
   options:
-    bucket_name: redis-boshrelease
-final_name: redis
+    blobstore_path: /tmp/redis-blobs
