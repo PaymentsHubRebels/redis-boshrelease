@@ -8,7 +8,11 @@ processes:
   ephemeral_disk: true
 
   hooks:
-    pre_start: /var/vcap/jobs/redis-sentinel/bin/pre_start.sh 
+    pre_start: /var/vcap/jobs/redis-sentinel/bin/pre_start.sh
+
+  additional_volumes:
+  - path: /var/vcap/jobs/redis-sentinel/config
+    writable: true 
 
 <% if_p('redis.maxclients') do |maxclients| -%>
 <% if maxclients.to_i > 0 -%>

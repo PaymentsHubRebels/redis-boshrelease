@@ -1,6 +1,6 @@
 ---
 name: redis-sentinel
-packages: [redis-4]
+packages: [redis-5]
 templates:
   config/bpm.yml.erb: config/bpm.yml
   config/sentinel.conf.erb: config/sentinel.conf
@@ -30,3 +30,6 @@ properties:
   sentinel.quorum:
     description: Quorum for "# sentinel monitor <master-name> <ip> <redis-port> <quorum>"
     default: 2
+
+  master_host:
+    description: The redis master IP or hostname.

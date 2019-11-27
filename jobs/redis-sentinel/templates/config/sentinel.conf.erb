@@ -78,7 +78,7 @@ dir "<%= p('base_dir') %>"
 #
 # Note: master name should not include special characters or spaces.
 # The valid charset is A-z 0-9 and the three characters ".-_".
-sentinel monitor mymaster <%= link("redis").instances.find {|redis| redis.bootstrap }.address %> <%= p("sentinel.redis_port") %> <%= p("sentinel.quorum") %>
+sentinel monitor mymaster <%= p("master_host", link("redis").instances.find {|redis| redis.bootstrap }.address) %> <%= p("sentinel.redis_port") %> <%= p("sentinel.quorum") %>
 
 # sentinel auth-pass <master-name> <password>
 #

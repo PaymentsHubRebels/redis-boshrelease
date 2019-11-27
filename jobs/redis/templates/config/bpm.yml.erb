@@ -1,7 +1,7 @@
 ---
 processes:
 - name: redis
-  executable: /var/vcap/packages/redis-4/bin/redis-server
+  executable: /var/vcap/packages/redis-5/bin/redis-server
   args:
   - /var/vcap/jobs/redis/config/redis.conf
   ephemeral_disk: true
@@ -9,6 +9,10 @@ processes:
 
   hooks:
     pre_start: /var/vcap/jobs/redis/bin/pre_start.sh
+
+  additional_volumes:
+  - path: /var/vcap/jobs/redis/config
+    writable: true
 
 <% if_p('redis.maxclients') do |maxclients| -%>
 <% if maxclients.to_i > 0 -%>

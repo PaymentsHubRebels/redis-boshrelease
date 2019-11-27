@@ -177,7 +177,7 @@ dir "<%= p('base_dir') %>"
 <% if_p("redis.replication") do |replication| %>
 <% if replication %>
 <% unless spec.bootstrap -%>
-slaveof <%= link("redis").instances.find {|redis| redis.bootstrap }.address %> <%= p("port") %>
+slaveof <%= p("master_host", link("redis").instances.find {|redis| redis.bootstrap }.address) %> <%= p("port") %>
 <% end -%>
 <% end %>
 <% end %>
