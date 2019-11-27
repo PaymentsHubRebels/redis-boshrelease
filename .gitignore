@@ -19,3 +19,5 @@ local*yml
 tmp
 creds.yml
 .log.txt
+.downloads
+.pairs
