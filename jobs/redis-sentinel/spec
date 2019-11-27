@@ -24,9 +24,7 @@ properties:
   sentinel.port:
     description: Port to listen for requests to redis server
     default: 26379
-  sentinel.redis_port:
-    description: Port your redis slaves are running on 
-    default: 6379
+    
   sentinel.quorum:
     description: Quorum for "# sentinel monitor <master-name> <ip> <redis-port> <quorum>"
     default: 2
