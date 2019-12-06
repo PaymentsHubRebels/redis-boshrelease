@@ -246,3 +246,9 @@ sentinel deny-scripts-reconfig yes
 # is possible to just rename a command to itsef:
 #
 # SENTINEL rename-command mymaster CONFIG CONFIG
+
+<% link("redis").if_p("password") do |password| %>
+  <% if password.to_s != "" %>
+    requirepass <%= password %>
+  <% end %>
+<% end %>
