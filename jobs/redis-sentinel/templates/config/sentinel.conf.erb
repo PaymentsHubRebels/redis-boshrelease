@@ -249,6 +249,6 @@ sentinel deny-scripts-reconfig yes
 
 <% link("redis").if_p("password") do |password| %>
   <% if password.to_s != "" %>
-    requirepass <%= password %>
+# requirepass <%= password %> # disable sentinel password due to application springboot version is 2.1.2
   <% end %>
 <% end %>
