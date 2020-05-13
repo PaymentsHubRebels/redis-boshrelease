@@ -2,7 +2,6 @@
 name: redis
 packages:
 - redis-5
-- bpm
 
 templates:
   config/bpm.yml.erb: config/bpm.yml
