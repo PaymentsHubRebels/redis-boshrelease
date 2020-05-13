@@ -1,5 +1,6 @@
 ---
 name: redis-5
-dependencies: []
+dependencies: 
+- bpm
 files:
 - redis/redis-5*.tar.gz
