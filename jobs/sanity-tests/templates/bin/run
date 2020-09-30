@@ -7,7 +7,6 @@ export PATH=$PATH:/var/vcap/packages/redis-5/bin
 
 EXITSTATUS=0
 
-test_master1=<%= p("master_host") %>
 test_master2=<%= link("redis").instances.find {|redis| redis.bootstrap }.address %>
 
 master=<%= p("master_host", link("redis").instances.find {|redis| redis.bootstrap }.address) %>
