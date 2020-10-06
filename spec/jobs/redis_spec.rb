@@ -30,11 +30,11 @@ describe 'redis job' do
     end
 
     it "chooses the bootstrap master" do
-      expect(template.render({}, consumes: links)).to match("slaveof 1.2.3.4")
+      expect(template.render({}, consumes: links)).to match("replicaof 1.2.3.4")
     end
 
     it "chooses the master_host master" do
-      expect(template.render({"master_host" => "4.3.2.1"}, consumes: links)).to match("slaveof 4.3.2.1")
+      expect(template.render({"master_host" => "4.3.2.1"}, consumes: links)).to match("replicaof 4.3.2.1")
     end
   end
 end
