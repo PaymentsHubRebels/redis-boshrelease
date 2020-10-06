@@ -38,13 +38,13 @@ if [[ "${role}" == "slave" ]]; then
     master_host=$(/var/vcap/packages/redis-5/bin/redis-cli -h 127.0.0.1 -p 6379 -a <%= p("password") %> info | grep master_host | cut -d ':' -f 2 | tr -d '\r')
     master_port=$(/var/vcap/packages/redis-5/bin/redis-cli -h 127.0.0.1 -p 6379 -a <%= p("password") %> info | grep master_port | cut -d ':' -f 2 | tr -d '\r')
 
-    if grep -Fxq "slaveof ${master_host} ${master_port}" /var/vcap/jobs/redis/config/redis.conf
+    if grep -Fxq "replicaof ${master_host} ${master_port}" /var/vcap/jobs/redis/config/redis.conf
     then
-        echo "I am already a slaveof ${master_host}"
+        echo "I am already a replicaof ${master_host}"
     else
-        previous_master_host=$(cat /var/vcap/jobs/redis/config/redis.conf | grep '^slaveof' | cut -d ' ' -f 2 | tr -d '\r')
-        previous_master_port=$(cat /var/vcap/jobs/redis/config/redis.conf | grep '^slaveof' | cut -d ' ' -f 3 | tr -d '\r')
-        sed -i -e "s/slaveof ${previous_master_host} ${previous_master_port}/slaveof ${master_host} ${master_port}/g" /var/vcap/jobs/redis/config/redis.conf
+        previous_master_host=$(cat /var/vcap/jobs/redis/config/redis.conf | grep '^replicaof' | cut -d ' ' -f 2 | tr -d '\r')
+        previous_master_port=$(cat /var/vcap/jobs/redis/config/redis.conf | grep '^replicaof' | cut -d ' ' -f 3 | tr -d '\r')
+        sed -i -e "s/replicaof ${previous_master_host} ${previous_master_port}/replicaof ${master_host} ${master_port}/g" /var/vcap/jobs/redis/config/redis.conf
     fi
 fi
 <% end %>
