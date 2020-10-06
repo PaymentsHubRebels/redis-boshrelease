@@ -7,7 +7,7 @@ export PATH=$PATH:/var/vcap/packages/redis-5/bin
 
 EXITSTATUS=0
 
-master_host=$(redis-cli -h 127.0.0.1 -p 6379 -a <%= p("password") %> info | grep master_host | cut -d ':' -f 2 | tr -d '\r')
+master_host=$(redis-cli -h 127.0.0.1 -p 6379 -a <%= link('redis').p('password') %> info | grep master_host | cut -d ':' -f 2 | tr -d '\r')
 echo <%= link("redis").instances.find { |redis| puts redis } %> > /tmp/instance_output
 cat /tmp/instance_output
 
