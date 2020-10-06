@@ -44,7 +44,6 @@ if [[ "${role}" == "slave" ]]; then
     else
         previous_master_host=$(cat /var/vcap/jobs/redis/config/redis.conf | grep '^slaveof' | cut -d ' ' -f 2 | tr -d '\r')
         previous_master_port=$(cat /var/vcap/jobs/redis/config/redis.conf | grep '^slaveof' | cut -d ' ' -f 3 | tr -d '\r')
-        echo 'Do something'
         sed -i -e "s/slaveof ${previous_master_host} ${previous_master_port}/slaveof ${master_host} ${master_port}/g" /var/vcap/jobs/redis/config/redis.conf
     fi
 fi
