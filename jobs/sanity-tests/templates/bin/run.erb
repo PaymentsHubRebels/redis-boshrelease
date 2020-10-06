@@ -7,30 +7,41 @@ export PATH=$PATH:/var/vcap/packages/redis-5/bin
 
 EXITSTATUS=0
 
-master_host=$(redis-cli -h 127.0.0.1 -p 6379 -a <%= link('redis').p('password') %> info | grep master_host | cut -d ':' -f 2 | tr -d '\r')
-echo <%= link("redis").instances.find { |redis| puts redis } %> > /tmp/instance_output
-cat /tmp/instance_output
 
-slave_host=<%= link("redis").instances.find { |redis| puts redis } %>
-
-slave=<%= link("redis").instances.find { |redis| !redis.bootstrap }.address %>
-
-master=<%= p("master_host", link("redis").instances.find { |redis| redis.bootstrap }.address) %>
-slave=<%= link("redis").instances.find { |redis| !redis.bootstrap }.address %>
+bootstrap_host=<%= link("redis").instances.find { |redis| redis.bootstrap }.address %>
 port="<%= link('redis').p('port') %>"
 password="<%= link('redis').p('password') %>"
 
+master_host=$(redis-cli -h "${bootstrap_host}" -p "${port}" -a "${password}" info | grep master_host | cut -d ':' -f 2 | tr -d '\r')
+
+master=<%= p("master_host", link("redis").instances.find { |redis| redis.bootstrap }.address) %>
+slave=<%= link("redis").instances.find { |redis| !redis.bootstrap }.address %>
+
 echo "-----"
 echo "TEST: Write/read to master"
-redis-cli -h $master -p $port -a $password set rats running
-rats=$(redis-cli -h $master -p $port -a $password get rats)
 
-if [[ "${rats}" == "running" ]]
-then
-  echo "PASSED"
+if [ -z "${master_host}" ]; then
+  redis-cli -h $master -p $port -a $password set rats running
+  rats=$(redis-cli -h $master -p $port -a $password get rats)
+
+  if [[ "${rats}" == "running" ]]
+  then
+    echo "PASSED"
+  else
+    echo "FAILED"
+    EXITSTATUS=1
+  fi
 else
-  echo "FAILED"
-  EXITSTATUS=1
+  redis-cli -h "${master_host}" -p "{$port}" -a "${password}" set rats running
+  rats=$(redis-cli -h "${master_host}" -p "{$port}" -a "${password}" get rats)
+
+  if [[ "${rats}" == "running" ]]
+  then
+    echo "PASSED"
+  else
+    echo "FAILED"
+    EXITSTATUS=1
+  fi
 fi
 
 echo "-----"
