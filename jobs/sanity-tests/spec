@@ -2,7 +2,7 @@
 name: sanity-tests
 packages: [redis-5]
 templates:
-  bin/run: bin/run
+  bin/run.erb: bin/run
 
 consumes:
 - name: redis

@@ -182,7 +182,6 @@ replicaof <%= p("master_host", link("redis").instances.find {|redis| redis.boots
 <% end %>
 <% end %>
 
-
 # If the master is password protected (using the "requirepass" configuration
 # directive below) it is possible to tell the slave to authenticate before
 # starting the replication synchronization process, otherwise the master will
