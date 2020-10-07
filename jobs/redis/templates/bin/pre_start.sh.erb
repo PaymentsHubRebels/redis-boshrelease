@@ -1,7 +1,6 @@
 #!/bin/bash
 
-set -u # report the usage of uninitialized variables
-set -x
+set -euxo pipefail
 
 # Best practice per https://redis.io/topics/admin
 chpst -u root:root echo never > /sys/kernel/mm/transparent_hugepage/enabled
