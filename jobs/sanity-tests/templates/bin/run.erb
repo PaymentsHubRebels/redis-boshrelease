@@ -14,6 +14,12 @@ password="<%= link('redis').p('password') %>"
 
 master_host=$(redis-cli -h "${bootstrap_host}" -p "${port}" -a "${password}" info | grep master_host | cut -d ':' -f 2 | tr -d '\r')
 
+if [ -z "${master_host}" ]; then
+  slave_host=$(redis-cli -h "${bootstrap_host}" -p "${port}" -a "${password}" client list | grep -v name=sentinel | grep addr | cut -d '=' -f 3 | cut -d ':' -f 1 | head -1)
+else
+  slave_host=$(redis-cli -h "${master_host}" -p "${port}" -a "${password}" client list | grep -v name=sentinel | grep addr | cut -d '=' -f 3 | cut -d ':' -f 1 | head -1)
+fi
+
 master=<%= p("master_host", link("redis").instances.find { |redis| redis.bootstrap }.address) %>
 slave=<%= link("redis").instances.find { |redis| !redis.bootstrap }.address %>
 
@@ -32,8 +38,8 @@ if [ -z "${master_host}" ]; then
     EXITSTATUS=1
   fi
 else
-  redis-cli -h "${master_host}" -p "{$port}" -a "${password}" set rats running
-  rats=$(redis-cli -h "${master_host}" -p "{$port}" -a "${password}" get rats)
+  redis-cli -h "${master_host}" -p "${port}" -a "${password}" set rats running
+  rats=$(redis-cli -h "${master_host}" -p "${port}" -a "${password}" get rats)
 
   if [[ "${rats}" == "running" ]]
   then
