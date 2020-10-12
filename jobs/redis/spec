@@ -5,7 +5,7 @@ packages:
 
 templates:
   config/bpm.yml.erb: config/bpm.yml
-  config/redis.conf.erb: config/redis.conf.part
+  config/redis.conf.erb: config/redis.conf
   bin/health_check: bin/health_check
   bin/pre_start.sh.erb: bin/pre_start.sh
 
@@ -16,8 +16,6 @@ provides:
   - port
   - password
   - base_dir
-  - redis.replication
-  - master_host
 
 consumes:
 - name: redis
@@ -62,7 +60,7 @@ properties:
     default: true
   redis.raw_config:
     description: Block literal representing redis configuration.  Appended at the end of redis.conf, the raw values provided will take precedence over any other configuration properties
-    default: ""
+    default: "" 
 
   master_host:
     description: The redis master IP or hostname.

@@ -19,11 +19,6 @@ instance_groups:
     release: redis
     properties:
       password: ((redis-password))
-  - name: redis-bootstrap
-    release: redis
-    lifecycle: errand
-    properties: {}
-
 - name: sanity-tests
   azs: [z1]
   instances: 1

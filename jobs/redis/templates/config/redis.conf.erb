@@ -22,9 +22,9 @@ port <%= p("port") %>
 
 # If bind_static_ip is set to true in your manifest file, it will set the bind property
 # for each instance in your cluster to the static IP which was assigned to the instance
-# If it is set to false, it will not set the bind property which will force it to
+# If it is set to false, it will not set the bind property which will force it to 
 # fall back to default behavior, i.e. protected mode due to bind not being set
-#
+#  
 # bind_static_ip true
 #
 <% if_p("bind_static_ip") do |bind_static_ip| %>
@@ -166,6 +166,32 @@ dbfilename dump.rdb
 #
 # Note that you must specify a directory here, not a file name.
 dir "<%= p('base_dir') %>"
+
+################################# REPLICATION #################################
+
+# Master-Slave replication. Use slaveof to make a Redis instance a copy of
+# another Redis server. Note that the configuration is local to the slave
+# so for example it is possible to configure the slave to save the DB with a
+# different interval, or to listen to another port, and so on.
+#
+<% if_p("redis.replication") do |replication| %>
+<% if replication %>
+<% unless p("master_host", link("redis").instances.find {|redis| redis.bootstrap }.address).to_s == spec.address.to_s -%>
+replicaof <%= p("master_host", link("redis").instances.find {|redis| redis.bootstrap }.address) %> <%= p("port") %>
+<% end -%>
+<% end %>
+<% end %>
+
+# If the master is password protected (using the "requirepass" configuration
+# directive below) it is possible to tell the slave to authenticate before
+# starting the replication synchronization process, otherwise the master will
+# refuse the slave request.
+#
+<% if_p("password") do |password| %>
+  <% if password.to_s != "" %>
+    masterauth <%= p("password") %>
+  <% end %>
+<% end %>
 
 # When a slave loses its connection with the master, or when the replication
 # is still in progress, the slave can act in two different ways:
@@ -609,7 +635,7 @@ aof-rewrite-incremental-fsync yes
 
 
 
-# Redis reads configs top to bottom.  This block enables us to inject
+# Redis reads configs top to bottom.  This block enables us to inject 
 # raw config values to overwride any defaults or bosh release parameters
 <% if_p('redis.raw_config') do |redis_config| -%>
 <%= redis_config %>
