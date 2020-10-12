@@ -5,7 +5,7 @@ packages:
 
 templates:
   config/bpm.yml.erb: config/bpm.yml
-  config/redis.conf.erb: config/redis.conf.part
+  config/redis.conf.part.erb: config/redis.conf.part
   bin/health_check: bin/health_check
   bin/pre_start.sh.erb: bin/pre_start.sh
 
