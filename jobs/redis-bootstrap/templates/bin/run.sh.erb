@@ -2,8 +2,9 @@
 
 set -euf -o pipefail
 
-REDIS_CONF=/var/vcap/store/jobs/redis/config/redis.conf
-BOOTSTRAPED=/var/vcap/store/jobs/redis/.bootstrapped
+REDIS_CONF_DIR=/var/vcap/store/redis/config
+REDIS_CONF=$REDIS_CONF_DIR/redis.conf
+BOOTSTRAPED=/var/vcap/store/redis/.bootstrapped
 
 # fast exit if bootstrapped
 if [ -f $BOOTSTRAPED ]; then

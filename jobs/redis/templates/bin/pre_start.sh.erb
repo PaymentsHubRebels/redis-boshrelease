@@ -3,7 +3,10 @@
 set -u # report the usage of uninitialized variables
 set -x
 
-REDIS_CONF=/var/vcap/store/jobs/redis/config/redis.conf
+REDIS_CONF_DIR=/var/vcap/store/redis/config
+REDIS_CONF=$REDIS_CONF_DIR/redis.conf
+
+mkdir -p $REDIS_CONF_DIR
 
 if [ ! -f $REDIS_CONF ]; then
     cp /var/vcap/jobs/redis/config/redis.conf.part $REDIS_CONF
@@ -33,4 +36,5 @@ chpst -u root:root sysctl vm.overcommit_memory=1
 # Earlier builds generated a redis.log owned by root.  This resets logs dir owners to vcap.
 chpst -u root:root chown -R vcap:vcap /var/vcap/sys/log
 chpst -u root:root chown -R vcap:vcap /var/vcap/jobs/redis/config
+chpst -u root:root chown -R vcap:vcap $REDIS_CONF_DIR
 
