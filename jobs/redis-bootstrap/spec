@@ -1,0 +1,13 @@
+---
+name: redis-bootstrap
+
+consumes:
+- name: redis
+  type: redis
+
+templates:
+  bin/run.sh.erb: bin/run.sh
+
+packages: []
+
+properties: {}

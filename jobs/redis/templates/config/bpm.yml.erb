@@ -3,7 +3,7 @@ processes:
 - name: redis
   executable: /var/vcap/packages/redis-5/bin/redis-server
   args:
-  - /var/vcap/jobs/redis/config/redis.conf
+  - /var/vcap/store/jobs/redis/config/redis.conf
   ephemeral_disk: true
   persistent_disk: true
 
@@ -11,13 +11,15 @@ processes:
     pre_start: /var/vcap/jobs/redis/bin/pre_start.sh
 
   additional_volumes:
+  - path: /var/vcap/store/jobs/redis/config
+    writable: true
   - path: /var/vcap/jobs/redis/config
     writable: true
 
 <% if_p('redis.maxclients') do |maxclients| -%>
 <% if maxclients.to_i > 0 -%>
   limits:
-    open_files: <%= p("redis.maxclients").to_i.round * 1.25 %> 
+    open_files: <%= p("redis.maxclients").to_i.round * 1.25 %>
 <% else -%>
   limits:
     open_files: 12500
