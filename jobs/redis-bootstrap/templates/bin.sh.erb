@@ -3,9 +3,10 @@
 set -euf -o pipefail
 
 REDIS_CONF=/var/vcap/store/jobs/redis/config/redis.conf
+BOOTSTRAPED=/var/vcap/store/jobs/redis/.bootstrapped
 
 # fast exit if bootstrapped
-if [ -f /var/vcap/store/jobs/redis/.bootstrapped ]; then
+if [ -f $BOOTSTRAPED ]; then
   exit 0
 fi
 
@@ -38,6 +39,7 @@ masterauth <%= link_redis.p("password") %>
 <% end %>
 EOF
 
+touch $BOOTSTRAPED
 fi
 
 <% end %>
