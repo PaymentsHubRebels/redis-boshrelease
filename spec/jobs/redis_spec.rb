@@ -8,8 +8,8 @@ describe 'redis job' do
 
   }
 
-  describe "redis.conf.part" do
-    let(:template) { job.template('config/redis.conf.part') }
+  describe "redis.conf" do
+    let(:template) { job.template('config/redis.conf') }
 
     links = [      
       Bosh::Template::Test::Link.new(
@@ -27,6 +27,14 @@ describe 'redis job' do
       expect {
         template.render({}, consumes: links)
       }.to_not raise_error
+    end
+
+    it "chooses the bootstrap master" do
+      expect(template.render({}, consumes: links)).to match("replicaof 1.2.3.4")
+    end
+
+    it "chooses the master_host master" do
+      expect(template.render({"master_host" => "4.3.2.1"}, consumes: links)).to match("replicaof 4.3.2.1")
     end
   end
 end
