@@ -1,6 +1,8 @@
 ---
 name: redis
 blobstore:
-  provider: local
+  provider: s3
   options:
-    blobstore_path: /tmp/redis-blobs
+    bucket_name: redis-boshrelease-blobstore
+    region: eu-west-2
+    host: s3-eu-west-2.amazonaws.com
