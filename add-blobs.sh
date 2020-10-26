@@ -1,7 +1,7 @@
 #!/bin/bash
 
 THIS_SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-DOWNLOAD_FOLDER="$THIS_SCRIPT_DIR/.downloads"
+DOWNLOAD_FOLDER="/tmp/bosh_downloads"
 
 REDIS_VERSION="5.0.5"
 BLOB_FILENAME="redis-$REDIS_VERSION.tar.gz"
