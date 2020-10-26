@@ -1,0 +1,33 @@
+name: redis
+version: 1.0.14
+commit_hash: c33592b
+uncommitted_changes: false
+jobs:
+- name: redis
+  version: c3bc090b7b9b0070d1fa9588afcd91dc804d96aa79d8efd820c61120f027d1fb
+  fingerprint: c3bc090b7b9b0070d1fa9588afcd91dc804d96aa79d8efd820c61120f027d1fb
+  sha1: sha256:dc013bad9280ecf8408cd415451c9ce82c4e3ae2d2e7cd14d2606b101267307e
+  packages:
+  - redis-5
+- name: redis-sentinel
+  version: f3752d7d49c9afcc89b1d4e20575e17c3e96fc39c9ed98e71a0f6204c7af9066
+  fingerprint: f3752d7d49c9afcc89b1d4e20575e17c3e96fc39c9ed98e71a0f6204c7af9066
+  sha1: sha256:f2c0c393ddde22d53d078308827efdccabce3c8142a9da8aef5267270dc217f3
+  packages:
+  - redis-5
+- name: sanity-tests
+  version: 6e7d7a51df6bc5ce96c436fb4894b3a22d0238bc8464054433d870b81963b042
+  fingerprint: 6e7d7a51df6bc5ce96c436fb4894b3a22d0238bc8464054433d870b81963b042
+  sha1: sha256:a630c4dce1282e3894701a42aa96643479e1d5536d2344b4cb95f0919084ba85
+  packages:
+  - redis-5
+packages:
+- name: redis-5
+  version: f2a3b30ea351f20dbd8fa96fa2fc499e7066350b3aeffc067617f9e36e7a82b4
+  fingerprint: f2a3b30ea351f20dbd8fa96fa2fc499e7066350b3aeffc067617f9e36e7a82b4
+  sha1: sha256:96aa4532a7003f3fbd1120245ae8cc8a4fa2a94159bc1f8d90ba12551512c78c
+  dependencies: []
+license:
+  version: 7298e784b32f97325da2069a3608ee5f03867841d311192f32d85d5b8d0f44b4
+  fingerprint: 7298e784b32f97325da2069a3608ee5f03867841d311192f32d85d5b8d0f44b4
+  sha1: sha256:71d99dec9f090787ec1575324e52518b4ca68a7d3796663a13b4c770b54b3d0b
