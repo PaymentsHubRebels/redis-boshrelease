@@ -79,7 +79,7 @@ dir "<%= p('base_dir') %>"
 # Note: master name should not include special characters or spaces.
 # The valid charset is A-z 0-9 and the three characters ".-_".
 <% link_to_master =  link("redis").instances.find {|redis| redis.bootstrap } %>
-sentinel monitor mymaster <%= p("master_host", link_to_master.address) %> <%= link("redis").p('port') %> <%= p("sentinel.quorum") %>
+# sentinel monitor mymaster <%= p("master_host", link_to_master.address) %> <%= link("redis").p('port') %> <%= p("sentinel.quorum") %>
 
 # sentinel auth-pass <master-name> <password>
 #
@@ -171,7 +171,7 @@ sentinel failover-timeout mymaster 10000
 # NOTIFICATION SCRIPT
 #
 # sentinel notification-script <master-name> <script-path>
-# 
+#
 # Call the specified notification script for any sentinel event that is
 # generated in the WARNING level (for instance -sdown, -odown, and so forth).
 # This script should notify the system administrator via email, SMS, or any
@@ -195,14 +195,14 @@ sentinel failover-timeout mymaster 10000
 # When the master changed because of a failover a script can be called in
 # order to perform application-specific tasks to notify the clients that the
 # configuration has changed and the master is at a different address.
-# 
+#
 # The following arguments are passed to the script:
 #
 # <master-name> <role> <state> <from-ip> <from-port> <to-ip> <to-port>
 #
 # <state> is currently always "failover"
 # <role> is either "leader" or "observer"
-# 
+#
 # The arguments from-ip, from-port, to-ip, to-port are used to communicate
 # the old address of the master and the new address of the elected replica
 # (now a master).
