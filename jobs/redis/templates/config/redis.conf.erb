@@ -22,9 +22,9 @@ port <%= p("port") %>
 
 # If bind_static_ip is set to true in your manifest file, it will set the bind property
 # for each instance in your cluster to the static IP which was assigned to the instance
-# If it is set to false, it will not set the bind property which will force it to 
+# If it is set to false, it will not set the bind property which will force it to
 # fall back to default behavior, i.e. protected mode due to bind not being set
-#  
+#
 # bind_static_ip true
 #
 <% if_p("bind_static_ip") do |bind_static_ip| %>
@@ -177,7 +177,7 @@ dir "<%= p('base_dir') %>"
 <% if_p("redis.replication") do |replication| %>
 <% if replication %>
 <% unless p("master_host", link("redis").instances.find {|redis| redis.bootstrap }.address).to_s == spec.address.to_s -%>
-replicaof <%= p("master_host", link("redis").instances.find {|redis| redis.bootstrap }.address) %> <%= p("port") %>
+# replicaof <%= p("master_host", link("redis").instances.find {|redis| redis.bootstrap }.address) %> <%= p("port") %>
 <% end -%>
 <% end %>
 <% end %>
@@ -189,7 +189,7 @@ replicaof <%= p("master_host", link("redis").instances.find {|redis| redis.boots
 #
 <% if_p("password") do |password| %>
   <% if password.to_s != "" %>
-    masterauth <%= p("password") %>
+#    masterauth <%= p("password") %>
   <% end %>
 <% end %>
 
@@ -635,7 +635,7 @@ aof-rewrite-incremental-fsync yes
 
 
 
-# Redis reads configs top to bottom.  This block enables us to inject 
+# Redis reads configs top to bottom.  This block enables us to inject
 # raw config values to overwride any defaults or bosh release parameters
 <% if_p('redis.raw_config') do |redis_config| -%>
 <%= redis_config %>
