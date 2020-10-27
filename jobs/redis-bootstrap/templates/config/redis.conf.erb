@@ -16,19 +16,6 @@ replicaof <%= redis_link.p("master_host", redis_link.instances.find {|redis| red
 <%
 end %>
 
-# If the master is password protected (using the "requirepass" configuration
-# directive below) it is possible to tell the slave to authenticate before
-# starting the replication synchronization process, otherwise the master will
-# refuse the slave request.
-#
-<%
-redis_link.if_p("password") do |password|
-  if password != "" %>
-masterauth <%= password %>
-<%
-  end
-end %>
-
 # When a slave loses its connection with the master, or when the replication
 # is still in progress, the slave can act in two different ways:
 #

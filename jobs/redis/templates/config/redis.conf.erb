@@ -180,11 +180,26 @@ dir "<%= p('base_dir') %>"
 # 150k passwords per second against a good box. This means that you should
 # use a very strong password otherwise it will be very easy to break.
 #
-<% if_p("password") do |password| %>
-  <% if password != "" %>
+<%
+if_p("password") do |password|
+  if password != "" %>
 requirepass <%= p("password") %>
-  <% end %>
-<% end %>
+<%
+  end
+end %>
+
+# If the master is password protected (using the "requirepass" configuration
+# directive below) it is possible to tell the slave to authenticate before
+# starting the replication synchronization process, otherwise the master will
+# refuse the slave request.
+#
+<%
+if_p("password") do |password|
+  if password != "" %>
+masterauth <%= password %>
+<%
+  end
+end %>
 
 # Command renaming.
 #
