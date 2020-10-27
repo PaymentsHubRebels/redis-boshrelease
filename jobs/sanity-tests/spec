@@ -2,11 +2,13 @@
 name: sanity-tests
 packages: [redis-5]
 templates:
-  bin/run.erb: bin/run
+  bin/run.sh.erb: bin/run
 
 consumes:
 - name: redis
   type: redis
+- name: redis-sentinel
+  type: redis-sentinel
 
 properties:
   master_host:

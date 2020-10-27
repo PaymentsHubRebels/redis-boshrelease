@@ -1,50 +1,53 @@
 #!/bin/bash
 
-set -ex # exit immediately if a simple command exits with a non-zero status
-set -u # report the usage of uninitialized variables
+set -euf -o pipefail
+set -x
 
 export PATH=$PATH:/var/vcap/packages/redis-5/bin
 
 EXITSTATUS=0
 
-bootstrap_host=<%= link("redis").instances.find { |redis| redis.bootstrap }.address %>
-port="<%= link('redis').p('port') %>"
-password="<%= link('redis').p('password') %>"
+<%
+redis_link = link("redis")
+sentinel_link = link("redis-sentinel")
+redis_port = redis_link.p("port")
+sentinel_port = sentinel_link.p("sentinel.port")
+password = redis_link.p("password")
+bootstrap_host = redis_link.instances.find { |redis| redis.bootstrap }.address
+%>
 
-master_host=$(redis-cli -h "${bootstrap_host}" -p "${port}" -a "${password}" info | grep master_host | cut -d ':' -f 2 | tr -d '\r')
+master_host=""
+bootstrap_host=<%= bootstrap_host %>
+port="<%= redis_port %>"
+password="<%= password %>"
+
+for sentinel in <%= sentinel_link.instances.map {|s| s.address }.join(" ") %>; do
+  set +e
+  master_host=$(redis-cli -h $sentinel -p <%= sentinel_port %> --raw sentinel masters | xargs -n 2 | grep "ip " | cut -d " " -f2)
+  set -e
+  if [ -n "$master_host" ]; then
+    break
+  fi
+done
 
 if [ -z "${master_host}" ]; then
+  master_host=<%= p("master_host", bootstrap_host) %>
   slave=$(redis-cli -h "${bootstrap_host}" -p "${port}" -a "${password}" client list type slave | grep addr | cut -d '=' -f 3 | cut -d ':' -f 1 | head -1)
 else
   slave=$(redis-cli -h "${master_host}" -p "${port}" -a "${password}" client list type slave | grep addr | cut -d '=' -f 3 | cut -d ':' -f 1 | head -1)
 fi
 
-master=<%= p("master_host", link("redis").instances.find { |redis| redis.bootstrap }.address) %>
-
 echo "-----"
 echo "TEST: Write/read to master"
-if [ -z "${master_host}" ]; then
-  redis-cli -h $master -p $port -a $password set rats running
-  rats=$(redis-cli -h $master -p $port -a $password get rats)
+redis-cli -h "${master_host}" -p "${port}" -a "${password}" set rats running
+rats=$(redis-cli -h "${master_host}" -p "${port}" -a "${password}" get rats)
 
-  if [[ "${rats}" == "running" ]]
-  then
-    echo "PASSED"
-  else
-    echo "FAILED"
-    EXITSTATUS=1
-  fi
+if [[ "${rats}" == "running" ]]
+then
+  echo "PASSED"
 else
-  redis-cli -h "${master_host}" -p "${port}" -a "${password}" set rats running
-  rats=$(redis-cli -h "${master_host}" -p "${port}" -a "${password}" get rats)
-
-  if [[ "${rats}" == "running" ]]
-  then
-    echo "PASSED"
-  else
-    echo "FAILED"
-    EXITSTATUS=1
-  fi
+  echo "FAILED"
+  EXITSTATUS=1
 fi
 
 echo "-----"
@@ -63,19 +66,19 @@ if [[ -n "$password" ]]
 then
   echo "-----"
   echo "TEST: Write/read to master: testing password requirement"
-  result="$(redis-cli -h $master -p $port -a "not-the-password" set rats testing-password-requirement)"
+  result="$(redis-cli -h $master_host -p $port -a "not-the-password" set rats testing-password-requirement)"
   if [[ "$result" != *"NOAUTH Authentication required."* ]]
   then
     echo "FAILED: Was able to write to master with incorrect password"
     EXITSTATUS=2
   fi
-  rats=$(redis-cli -h $master -p $port -a "different-password" get rats)
+  rats=$(redis-cli -h $master_host -p $port -a "different-password" get rats)
   if [[ "$rats" != *"NOAUTH Authentication required."* ]]
   then
     echo "FAILED: Was able to read from master with wrong password"
     EXITSTATUS=2
   fi
-  rats2=$(redis-cli -h $master -p $port get rats)
+  rats2=$(redis-cli -h $master_host -p $port get rats)
   if [[ "$rats2" != *"NOAUTH Authentication required."* ]]
   then
     echo "FAILED: Was able to read from master with no password"
@@ -106,7 +109,7 @@ then
   echo "-----"
   echo "TEST: Write/read to master: testing empty password requirement"
 
-  rats=$(redis-cli -h $master -p $port get rats)
+  rats=$(redis-cli -h $master_host -p $port get rats)
   if [[ "$rats" == *"NOAUTH Authentication required."* ]]
   then
     echo "FAILED: Was unable to read from master with no password"
