@@ -7,10 +7,20 @@ templates:
   bin/pre_start.sh: bin/pre_start.sh
   bin/wrapper.sh: bin/wrapper.sh
 
+provides:
+- name: redis-sentinel
+  type: redis-sentinel
+  properties:
+  - redis.maxclients
+  - base_dir
+  - sentinel.port
+  - sentinel.quorum
+  - master_host
+
 consumes:
 - name: redis
   type: redis
-  
+
 properties:
 
   redis.maxclients:
@@ -24,7 +34,7 @@ properties:
   sentinel.port:
     description: Port to listen for requests to redis server
     default: 26379
-    
+
   sentinel.quorum:
     description: Quorum for "# sentinel monitor <master-name> <ip> <redis-port> <quorum>"
     default: 2

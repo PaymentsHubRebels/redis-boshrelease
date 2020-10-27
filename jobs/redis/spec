@@ -16,6 +16,7 @@ provides:
   - port
   - password
   - base_dir
+  - redis.replication
 
 consumes:
 - name: redis
@@ -60,7 +61,7 @@ properties:
     default: true
   redis.raw_config:
     description: Block literal representing redis configuration.  Appended at the end of redis.conf, the raw values provided will take precedence over any other configuration properties
-    default: "" 
+    default: ""
 
   master_host:
     description: The redis master IP or hostname.

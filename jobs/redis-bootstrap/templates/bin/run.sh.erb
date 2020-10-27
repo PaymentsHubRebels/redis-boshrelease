@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+set -euf -o pipefail
+
+REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf
+REDIS_BOOTSTRAP=/var/vcap/jobs/redis-bootstrap/config/redis.conf
+SENTINEL_CONF=/var/vcap/jobs/redis-sentinel/config/sentinel.conf
+SENTINEL_BOOTSTRAP=/var/vcap/jobs/redis-bootstrap/config/sentinel.conf
+
+# if the machine is a redis instance
+# setup $REDIS_CONF
+if [ -f $REDIS_CONF ]; then
+  if grep --silent "# bootstrapped" $REDIS_CONF; then
+    echo Redis bootstrap is set already. Doing nothing.
+  else
+    echo "# bootstrapped" >> $REDIS_CONF
+    cat $REDIS_BOOTSTRAP >> $REDIS_CONF
+  fi
+  # restart redis
+  /var/vcap/bosh/bin/monit restart redis
+fi
+
+# if the machine is a redis-sentinel instance
+# setup $SENTINEL_CONF
+if [ -f $SENTINEL_CONF ]; then
+  if grep --silent "# bootstrapped" $SENTINEL_CONF; then
+    echo Sentinel bootstrap is set already. Doing nothing.
+  else
+    echo "# bootstrapped" >> $SENTINEL_CONF
+    cat $SENTINEL_BOOTSTRAP >> $SENTINEL_CONF
+  fi
+  # restart redis-sentinel
+  /var/vcap/bosh/bin/monit restart redis-sentinel
+fi

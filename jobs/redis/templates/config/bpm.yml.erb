@@ -17,7 +17,7 @@ processes:
 <% if_p('redis.maxclients') do |maxclients| -%>
 <% if maxclients.to_i > 0 -%>
   limits:
-    open_files: <%= p("redis.maxclients").to_i.round * 1.25 %> 
+    open_files: <%= p("redis.maxclients").to_i.round * 1.25 %>
 <% else -%>
   limits:
     open_files: 12500

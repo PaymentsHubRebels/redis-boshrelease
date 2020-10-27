@@ -4,7 +4,7 @@ processes:
   executable: /var/vcap/jobs/redis-sentinel/bin/wrapper.sh
   args:
   - /var/vcap/jobs/redis-sentinel/config/sentinel.conf
-  
+
   ephemeral_disk: true
 
   hooks:
@@ -12,7 +12,7 @@ processes:
 
   additional_volumes:
   - path: /var/vcap/jobs/redis-sentinel/config
-    writable: true 
+    writable: true
 
 <% if_p('redis.maxclients') do |maxclients| -%>
 <% if maxclients.to_i > 0 -%>

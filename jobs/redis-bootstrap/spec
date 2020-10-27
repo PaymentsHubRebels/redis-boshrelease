@@ -1,0 +1,17 @@
+---
+name: redis-bootstrap
+
+templates:
+  bin/run.sh.erb: bin/run
+  config/redis.conf.erb: config/redis.conf
+  config/sentinel.conf.erb: config/sentinel.conf
+
+consumes:
+- name: redis
+  type: redis
+- name: redis-sentinel
+  type: redis-sentinel
+
+packages: []
+
+properties: {}
