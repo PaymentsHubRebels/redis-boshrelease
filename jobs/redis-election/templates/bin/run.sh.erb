@@ -10,6 +10,7 @@ RECONFIGURE_REDIS=/var/vcap/jobs/redis-election/config/redis.conf.sh
 SENTINEL_CONF=/var/vcap/store/redis-sentinel/config/sentinel.conf
 TMP_SENTINEL_CONF=(mktemp)
 RECONFIGURE_SENTINEL=/var/vcap/jobs/redis-election/config/sentinel.conf.sh
+SENTINEL_ORIGINAL_CONF=/var/vcap/jobs/redis-sentinel/config/sentinel.conf
 
 chmod +x $RECONFIGURE_REDIS $RECONFIGURE_SENTINEL
 
@@ -69,6 +70,12 @@ fi
 # if the machine is a redis-sentinel instance
 # setup $SENTINEL_CONF
 if [ -f $SENTINEL_CONF ]; then
+  if bpm list | grep redis-sentinel | grep failed; then
+    if bpm logs redis-sentinel -e | tail -n 5 | grep 'FATAL CONFIG FILE ERROR'; then
+      echo Sentinel fails due to configuartion issue. Reseting configuration to default
+      cp -f $SENTINEL_ORIGINAL_CONF $SENTINEL_CONF
+    fi
+  fi
   if grep --silent "# bootstrapped" $SENTINEL_CONF; then
       cat $SENTINEL_CONF | sed -e '/\# bootstrapped/,$d' > $TMP_SENTINEL_CONF
       # run the template script and append it to $TMP_SENTINEL_CONF
