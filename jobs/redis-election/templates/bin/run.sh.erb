@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+set -euf -o pipefail
+
+REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf
+TMP_REDIS_CONF=/tmp/redis.conf
+RECONFIGURE_REDIS=/var/vcap/jobs/redis-bootstrap/config/redis.conf.sh
+SENTINEL_CONF=/var/vcap/jobs/redis-sentinel/config/sentinel.conf
+RECONFIGURE_SENTINEL=/var/vcap/jobs/redis-bootstrap/config/sentinel.conf.sh
+
+<%
+redis_link = link("redis")
+sentinel_link = link("redis-sentinel")
+redis_port = redis_link.p("port")
+sentinel_port = sentinel_link.p("sentinel.port")
+password = redis_link.p("password")
+bootstrap_host = redis_link.instances.find { |redis| redis.bootstrap }.address
+sentinel_quorum = sentinel_link.p("sentinel.quorum")
+%>
+
+master_host=""
+bootstrap_host=<%= bootstrap_host %>
+port="<%= redis_port %>"
+password="<%= password %>"
+sentinel_quorum=<%= sentinel_quorum %>
+
+# identify from sentinels which is the master ip and port
+for sentinel in <%= sentinel_link.instances.map {|s| s.address }.join(" ") %>; do
+  set +e
+  master_host=$(redis-cli -h $sentinel -p <%= sentinel_port %> --raw sentinel masters | xargs -n 2 | grep "ip " | cut -d " " -f2)
+  set -e
+  if [ -n "$master_host" ]; then
+    break
+  fi
+done
+
+# fail fast if unable to find a master
+if [ -z "${master_host}" ]; then
+  echo Could not find a proper master.
+  exit 1
+fi
+
+# if the machine is a redis instance
+# setup $REDIS_CONF
+if [ -f $REDIS_CONF ]; then
+  # if it is the master do nothing else fix the slave
+  if [ "$master_host" == "<%= spec.ip %>" ]; then
+    echo "$master_host" == <%= spec.address %> Seems I found the master. Doing nothing.
+  else
+    if grep --silent "# bootstrapped" $REDIS_CONF; then
+      cat $REDIS_CONF | sed -e '/\# bootstrapped/,$d' > $TMP_REDIS_CONF
+      # run the template script and append it to $TMP_REDIS_CONF
+      master_host=$master_host port=$port $RECONFIGURE_REDIS >> $TMP_REDIS_CONF
+      # replace $REDIS_CONF with $TMP_REDIS_CONF
+      mv -f $TMP_REDIS_CONF $REDIS_CONF
+    else
+      master_host=$master_host port=$port $RECONFIGURE_REDIS >> $REDIS_CONF
+    fi
+    # restart redis
+    /var/vcap/bosh/bin/monit restart redis
+  fi
+fi
+
+# if the machine is a redis-sentinel instance
+# setup $SENTINEL_CONF
+if [ -f $SENTINEL_CONF ]; then
+  if grep --silent "# bootstrapped" $SENTINEL_CONF; then
+      cat $SENTINEL_CONF | sed -e '/\# bootstrapped/,$d' > $TMP_SENTINEL_CONF
+      # run the template script and append it to $TMP_SENTINEL_CONF
+      master_host=$master_host port=$port sentinel_quorum=$sentinel_quorum $RECONFIGURE_SENTINEL >> $TMP_SENTINEL_CONF
+      # replace $SENTINEL_CONF with $TMP_SENTINEL_CONF
+      mv -f $TMP_SENTINEL_CONF $SENTINEL_CONF
+  else
+      master_host=$master_host port=$port sentinel_quorum=$sentinel_quorum $RECONFIGURE_SENTINEL >> $SENTINEL_CONF
+  fi
+  # restart redis-sentinel
+  /var/vcap/bosh/bin/monit restart redis-sentinel
+fi

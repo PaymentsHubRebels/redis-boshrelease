@@ -1,0 +1,17 @@
+---
+name: redis-election
+
+templates:
+  bin/run.sh.erb: bin/run
+  config/redis.conf.sh: config/redis.conf.sh
+  config/sentinel.conf.sh: config/sentinel.conf.sh
+
+consumes:
+- name: redis
+  type: redis
+- name: redis-sentinel
+  type: redis-sentinel
+
+packages: []
+
+properties: {}
