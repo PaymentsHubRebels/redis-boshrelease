@@ -2,6 +2,8 @@
 
 set -euf -o pipefail
 
+export PATH=$PATH:/var/vcap/packages/redis-5/bin
+
 REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf
 TMP_REDIS_CONF=/tmp/redis.conf
 RECONFIGURE_REDIS=/var/vcap/jobs/redis-bootstrap/config/redis.conf.sh
