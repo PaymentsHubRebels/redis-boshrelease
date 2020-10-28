@@ -5,10 +5,13 @@ set -euf -o pipefail
 export PATH=$PATH:/var/vcap/packages/redis-5/bin
 
 REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf
-TMP_REDIS_CONF=/tmp/redis.conf
-RECONFIGURE_REDIS=/var/vcap/jobs/redis-bootstrap/config/redis.conf.sh
+TMP_REDIS_CONF=$(mktemp)
+RECONFIGURE_REDIS=/var/vcap/jobs/redis-election/config/redis.conf.sh
 SENTINEL_CONF=/var/vcap/store/redis-sentinel/config/sentinel.conf
-RECONFIGURE_SENTINEL=/var/vcap/jobs/redis-bootstrap/config/sentinel.conf.sh
+TMP_SENTINEL_CONF=(mktemp)
+RECONFIGURE_SENTINEL=/var/vcap/jobs/redis-election/config/sentinel.conf.sh
+
+chmod +x $RECONFIGURE_REDIS $RECONFIGURE_SENTINEL
 
 <%
 redis_link = link("redis")
@@ -69,11 +72,11 @@ if [ -f $SENTINEL_CONF ]; then
   if grep --silent "# bootstrapped" $SENTINEL_CONF; then
       cat $SENTINEL_CONF | sed -e '/\# bootstrapped/,$d' > $TMP_SENTINEL_CONF
       # run the template script and append it to $TMP_SENTINEL_CONF
-      master_host=$master_host port=$port sentinel_quorum=$sentinel_quorum $RECONFIGURE_SENTINEL >> $TMP_SENTINEL_CONF
+      master_host=$master_host port=$port password=$password sentinel_quorum=$sentinel_quorum $RECONFIGURE_SENTINEL >> $TMP_SENTINEL_CONF
       # replace $SENTINEL_CONF with $TMP_SENTINEL_CONF
       mv -f $TMP_SENTINEL_CONF $SENTINEL_CONF
   else
-      master_host=$master_host port=$port sentinel_quorum=$sentinel_quorum $RECONFIGURE_SENTINEL >> $SENTINEL_CONF
+      master_host=$master_host port=$port password=$password sentinel_quorum=$sentinel_quorum $RECONFIGURE_SENTINEL >> $SENTINEL_CONF
   fi
   # restart redis-sentinel
   /var/vcap/bosh/bin/monit restart redis-sentinel
