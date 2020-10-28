@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+set -euf -o pipefail
+
+REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf
+SENTINEL_CONF=/var/vcap/store/redis-sentinel/config/sentinel.conf
+
+death_probability=<%= p("death_probability") %>
+ruin_probability=<%= p("ruin_probability") %>
+
+# fail hard and fast if affected_zone does not match instance region zone or is empty
+<%
+if_p("affected_zone") do |az|
+  if az != spec.az %>
+echo Region zone <%= spec.az %> is not targeted by chaos.
+exit 0
+<%
+  end
+end %>
+
+# get a random number between 1-100
+death_roll=$[ $RANDOM % 100 + 1 ]
+ruin_roll=$[ $RANDOM % 100 + 1 ]
+
+# based on the death_probability property 0-100 declare if instance is killable where 0 is never and >=100 is certain
+# based on the ruin_probability property 0-100 declare if service should be ruined instead where 0 is never and >=100 is certain
+
+# kill instance if death_probability is reached
+if [[ $death_probability -ge 1 && $death_roll -le $death_probability ]]; then
+  echo Death probablility set $death_probability
+  echo Death rolled $death_roll
+  echo This machine needs to die. Sorry.
+  halt -d -f -p
+fi
+
+# if ruin_probability is reached and the machine is a redis instance
+# terminate redis service and ruin redis configuration
+if [[ -f $REDIS_CONF && $ruin_probability -ge 1 && $ruin_roll -le $ruin_probability ]]; then
+  echo Ruin probablility set $ruin_probability
+  echo Ruin rolled $ruin_roll
+  echo This redis service will be tampered and will not recover this. Sorry.
+  echo cannot run from the chaos >> $REDIS_CONF
+  /var/vcap/bosh/bin/monit restart redis
+fi
+
+# if ruin_probability is reached and the machine is a redis-sentinel instance
+# terminate redis-sentinel service and ruin redis-sentinel configuration
+if [[ -f $SENTINEL_CONF && $ruin_probability -ge 1 && $ruin_roll -le $ruin_probability ]]; then
+  echo Ruin probablility set $ruin_probability
+  echo Ruin rolled $ruin_roll
+  echo This redis-sentinel service will be tampered and will not recover this. Sorry.
+  echo cannot run from the chaos >> $SENTINEL_CONF
+  /var/vcap/bosh/bin/monit restart redis-sentinel
+fi
