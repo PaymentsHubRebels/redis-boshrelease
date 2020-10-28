@@ -13,7 +13,6 @@ if [ -f $REDIS_CONF ]; then
   if grep --silent "# bootstrapped" $REDIS_CONF; then
     echo Redis bootstrap is set already. Doing nothing.
   else
-    echo "# bootstrapped" >> $REDIS_CONF
     cat $REDIS_BOOTSTRAP >> $REDIS_CONF
   fi
   # restart redis
@@ -26,7 +25,6 @@ if [ -f $SENTINEL_CONF ]; then
   if grep --silent "# bootstrapped" $SENTINEL_CONF; then
     echo Sentinel bootstrap is set already. Doing nothing.
   else
-    echo "# bootstrapped" >> $SENTINEL_CONF
     cat $SENTINEL_BOOTSTRAP >> $SENTINEL_CONF
   fi
   # restart redis-sentinel
