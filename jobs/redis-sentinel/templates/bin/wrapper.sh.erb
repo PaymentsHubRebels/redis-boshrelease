@@ -5,10 +5,14 @@ set -u # report the usage of uninitialized variables
 conf_file=$1
 dest_conf=/var/vcap/store/redis-sentinel/config/sentinel.conf
 
+# Sentinel configuration is persisted under /var/vcap/store and should not be overwritten
+# unless we know what we are doing.
 if [ ! -f $dest_conf ]; then
   cp $conf_file $dest_conf
 fi
 
+# However there is a way to override it in case of emergency or complete wipe
+# by setting the "overwrite_configuration" property to true
 <% if p("overwrite_configuration") %>
 cp $conf_file $dest_conf
 <% end %>
