@@ -5,7 +5,7 @@ set -euf -o pipefail
 REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf
 TMP_REDIS_CONF=/tmp/redis.conf
 RECONFIGURE_REDIS=/var/vcap/jobs/redis-bootstrap/config/redis.conf.sh
-SENTINEL_CONF=/var/vcap/jobs/redis-sentinel/config/sentinel.conf
+SENTINEL_CONF=/var/vcap/store/redis-sentinel/config/sentinel.conf
 RECONFIGURE_SENTINEL=/var/vcap/jobs/redis-bootstrap/config/sentinel.conf.sh
 
 <%

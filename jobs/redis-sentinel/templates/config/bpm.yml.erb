@@ -13,6 +13,8 @@ processes:
   additional_volumes:
   - path: /var/vcap/jobs/redis-sentinel/config
     writable: true
+  - path: /var/vcap/store/redis-sentinel/config
+    writable: true
 
 <% if_p('redis.maxclients') do |maxclients| -%>
 <% if maxclients.to_i > 0 -%>

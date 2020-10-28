@@ -4,7 +4,7 @@ set -euf -o pipefail
 
 REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf
 REDIS_BOOTSTRAP=/var/vcap/jobs/redis-bootstrap/config/redis.conf
-SENTINEL_CONF=/var/vcap/jobs/redis-sentinel/config/sentinel.conf
+SENTINEL_CONF=/var/vcap/store/redis-sentinel/config/sentinel.conf
 SENTINEL_BOOTSTRAP=/var/vcap/jobs/redis-bootstrap/config/sentinel.conf
 
 # if the machine is a redis instance

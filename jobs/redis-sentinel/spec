@@ -5,7 +5,7 @@ templates:
   config/bpm.yml.erb: config/bpm.yml
   config/sentinel.conf.erb: config/sentinel.conf
   bin/pre_start.sh: bin/pre_start.sh
-  bin/wrapper.sh: bin/wrapper.sh
+  bin/wrapper.sh.erb: bin/wrapper.sh
 
 provides:
 - name: redis-sentinel
@@ -40,3 +40,7 @@ properties:
 
   master_host:
     description: The redis master IP or hostname.
+
+  overwrite_configuration:
+    description: Will force default bosh rendered configuration to overwrite running one. Use with caution
+    default: false

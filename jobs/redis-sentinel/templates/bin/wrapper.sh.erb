@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -u # report the usage of uninitialized variables
+
+conf_file=$1
+dest_conf=/var/vcap/store/redis-sentinel/config/sentinel.conf
+
+if [ ! -f $dest_conf ]; then
+  cp $conf_file $dest_conf
+fi
+
+<% if p("overwrite_configuration") %>
+cp $conf_file $dest_conf
+<% end %>
+
+exec /var/vcap/packages/redis-5/bin/redis-server $dest_conf --sentinel
