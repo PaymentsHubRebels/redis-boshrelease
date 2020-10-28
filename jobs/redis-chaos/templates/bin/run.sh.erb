@@ -7,6 +7,7 @@ SENTINEL_CONF=/var/vcap/store/redis-sentinel/config/sentinel.conf
 
 death_probability=<%= p("death_probability") %>
 ruin_probability=<%= p("ruin_probability") %>
+timestamp=$(date "+%Y%m%d%H%M")
 
 # fail hard and fast if affected_zone does not match instance region zone or is empty
 <%
@@ -18,6 +19,35 @@ exit 0
   end
 end %>
 
+<%
+redis_link = link("redis")
+sentinel_link = link("redis-sentinel")
+redis_port = redis_link.p("port")
+sentinel_port = sentinel_link.p("sentinel.port")
+password = redis_link.p("password")
+bootstrap_host = redis_link.instances.find { |redis| redis.bootstrap }.address
+%>
+
+master_host=""
+bootstrap_host=<%= bootstrap_host %>
+port="<%= redis_port %>"
+password="<%= password %>"
+instance_id=<%= spec.id %>
+
+for sentinel in <%= sentinel_link.instances.map {|s| s.address }.join(" ") %>; do
+  set +e
+  master_host=$(redis-cli -h $sentinel -p <%= sentinel_port %> --raw sentinel masters | xargs -n 2 | grep "ip " | cut -d " " -f2)
+  set -e
+  if [ -n "$master_host" ]; then
+    break
+  fi
+done
+
+if [ -z "$master_host" ]; then
+  echo Master went AWOL. Go catch it.
+  exit 1
+fi
+
 # get a random number between 1-100
 death_roll=$[ $RANDOM % 100 + 1 ]
 ruin_roll=$[ $RANDOM % 100 + 1 ]
@@ -27,18 +57,30 @@ ruin_roll=$[ $RANDOM % 100 + 1 ]
 
 # kill instance if death_probability is reached
 if [[ $death_probability -ge 1 && $death_roll -le $death_probability ]]; then
-  echo Death probablility set $death_probability
-  echo Death rolled $death_roll
-  echo This machine needs to die. Sorry.
+  message=$(cat<<EOF
+Death probablility set $death_probability
+Death rolled $death_roll
+This machine needs to die. Sorry.
+EOF
+  )
+
+  redis-cli -h $master_host -p $port -a "$password" set "chaos_${timestamp}_${instance_id}" "$message"
+
   halt -d -f -p
 fi
 
 # if ruin_probability is reached and the machine is a redis instance
 # terminate redis service and ruin redis configuration
 if [[ -f $REDIS_CONF && $ruin_probability -ge 1 && $ruin_roll -le $ruin_probability ]]; then
-  echo Ruin probablility set $ruin_probability
-  echo Ruin rolled $ruin_roll
-  echo This redis service will be tampered and will not recover this. Sorry.
+  message=$(cat<<EOF
+Ruin probablility set $ruin_probability
+Ruin rolled $ruin_roll
+This redis service will be tampered and will not recover this. Sorry.
+EOF
+  )
+
+  redis-cli -h $master_host -p $port -a "$password" set "chaos_${timestamp}_${instance_id}" "$message"
+
   echo cannot run from the chaos >> $REDIS_CONF
   /var/vcap/bosh/bin/monit restart redis
 fi
@@ -46,9 +88,15 @@ fi
 # if ruin_probability is reached and the machine is a redis-sentinel instance
 # terminate redis-sentinel service and ruin redis-sentinel configuration
 if [[ -f $SENTINEL_CONF && $ruin_probability -ge 1 && $ruin_roll -le $ruin_probability ]]; then
-  echo Ruin probablility set $ruin_probability
-  echo Ruin rolled $ruin_roll
-  echo This redis-sentinel service will be tampered and will not recover this. Sorry.
+  message=$(cat<<EOF
+Ruin probablility set $ruin_probability
+Ruin rolled $ruin_roll
+This redis-sentinel service will be tampered and will not recover this. Sorry.
+EOF
+  )
+
+  redis-cli -h $master_host -p $port -a "$password" set "chaos_${timestamp}_${instance_id}" "$message"
+
   echo cannot run from the chaos >> $SENTINEL_CONF
   /var/vcap/bosh/bin/monit restart redis-sentinel
 fi
