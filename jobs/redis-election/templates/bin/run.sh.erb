@@ -5,6 +5,7 @@ set -euf -o pipefail
 export PATH=$PATH:/var/vcap/packages/redis-5/bin:/var/vcap/jobs/bpm/bin
 
 REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf
+DEFAULT_REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf.default
 TMP_REDIS_CONF=$(mktemp)
 RECONFIGURE_REDIS=/var/vcap/jobs/redis-election/config/redis.conf.sh
 SENTINEL_CONF=/var/vcap/store/redis-sentinel/config/sentinel.conf
@@ -44,60 +45,43 @@ identify_master() {
       break
     fi
   done
-  printf "%s" $master_found
+  printf "%s" $master_host
 }
 
-local_redis_master() {
-  local master_found=""
+search_for_master() {
+  local master_host=""
   local port=$1
-  local password=$2
+  local password=$1
 
-  set +e
-  master_found=$(redis-cli -p $port -a "$password" info | grep master_host | cut -d':' -f2)
-  set -e
-  printf "%s" $master_found
-}
-
-local_sentinel_master() {
-  local master_found=""
-  local sentinel_port=$1
-  set +e
-  master_found=$(redis-cli -p $sentinel_port --raw sentinel masters | xargs -n 2 | grep "ip " | cut -d " " -f2)
-  set -e
-  printf "%s" $master_found
+  # identify from sentinels which is the master ip and port
+  for redis in <%= redis_link.instances.map {|s| s.address }.join(" ") %>; do
+    set +e
+    if redis-cli -h $redis -p $port -a $password info | grep 'role:master'; then
+      master_host=$redis
+      break
+    fi
+    set -e
+  done
+  printf "%s" $master_host
 }
 
 master_host=$(identify_master $sentinel_port)
 
-# fail fast if unable to find a master
-if [ -z "${master_host}" ]; then
-  echo Could not find a proper master.
-  exit 1
-fi
-
 # if the machine is a redis instance
 # setup $REDIS_CONF
-if [ -f $REDIS_CONF ]; then
+if [[ -f $REDIS_CONF && -n "${master_host}" ]]; then
   # if it is the master do nothing else fix the slave
   if [ "$master_host" == "$instance_ip" ]; then
     echo "$master_host" == $instance_ip Seems I found the master. Doing nothing.
   else
-    set +e
-    master_found=$(local_redis_master $port "$password")
-    set -e
-    if [ "$master_found" == "$master_host" ]; then
-      # Master is properly set. There is no reason to reset
-      echo Master is properly set. There is no reason to reset
+    if grep --silent "# bootstrapped" $REDIS_CONF; then
+      cat $DEFAULT_REDIS_CONF > $TMP_REDIS_CONF
+      # run the template script and append it to $TMP_REDIS_CONF
+      master_host=$master_host port=$port $RECONFIGURE_REDIS >> $TMP_REDIS_CONF
+      # replace $REDIS_CONF with $TMP_REDIS_CONF
+      mv -f $TMP_REDIS_CONF $REDIS_CONF
     else
-      if grep --silent "# bootstrapped" $REDIS_CONF; then
-        cat $REDIS_CONF | sed -e '/\# bootstrapped/,$d' > $TMP_REDIS_CONF
-        # run the template script and append it to $TMP_REDIS_CONF
-        master_host=$master_host port=$port $RECONFIGURE_REDIS >> $TMP_REDIS_CONF
-        # replace $REDIS_CONF with $TMP_REDIS_CONF
-        mv -f $TMP_REDIS_CONF $REDIS_CONF
-      else
-        master_host=$master_host port=$port $RECONFIGURE_REDIS >> $REDIS_CONF
-      fi
+      master_host=$master_host port=$port $RECONFIGURE_REDIS >> $REDIS_CONF
     fi
     # restart redis
     /var/vcap/bosh/bin/monit restart redis
@@ -107,27 +91,21 @@ fi
 # if the machine is a redis-sentinel instance
 # setup $SENTINEL_CONF
 if [ -f $SENTINEL_CONF ]; then
-  if bpm list | grep redis-sentinel | grep failed; then
-    if bpm logs redis-sentinel -e | tail -n 5 | grep 'FATAL CONFIG FILE ERROR'; then
-      echo Sentinel fails due to configuartion issue. Reseting configuration to default
-      cp -f $SENTINEL_ORIGINAL_CONF $SENTINEL_CONF
+  # None of the sentinels knows a master do a full reset while asking redis instead
+  if [ -z "${master_host}" ]; then
+    echo Could not find a proper master. Reseting sentinel
+    master_host=$(search_for_master $port "$password")
+    if [ -z "$master_host"]; then
+      echo "None of the redis instances declared itself as master. Reseting master to bootsrtrap $bootstrap_host"
+      master_host=$bootstrap_host
     fi
+    cp -f $SENTINEL_ORIGINAL_CONF $TMP_REDIS_CONF
+    # run the template script and append it to $TMP_SENTINEL_CONF
+    master_host=$master_host port=$port password=$password sentinel_quorum=$sentinel_quorum $RECONFIGURE_SENTINEL >> $TMP_SENTINEL_CONF
+    # replace $SENTINEL_CONF with $TMP_SENTINEL_CONF
+    mv -f $TMP_SENTINEL_CONF $SENTINEL_CONF
+
+    # restart redis-sentinel
+    /var/vcap/bosh/bin/monit restart redis-sentinel
   fi
-  master_found=$(local_sentinel_master $sentinel_port)
-  if [ "$master_found" == "$master_host" ]; then
-    # Master is properly set. There is no reason to reset
-    echo Master is properly set. There is no reason to reset
-  else
-    if grep --silent "# bootstrapped" $SENTINEL_CONF; then
-        cat $SENTINEL_CONF | sed -e '/\# bootstrapped/,$d' > $TMP_SENTINEL_CONF
-        # run the template script and append it to $TMP_SENTINEL_CONF
-        master_host=$master_host port=$port password=$password sentinel_quorum=$sentinel_quorum $RECONFIGURE_SENTINEL >> $TMP_SENTINEL_CONF
-        # replace $SENTINEL_CONF with $TMP_SENTINEL_CONF
-        mv -f $TMP_SENTINEL_CONF $SENTINEL_CONF
-    else
-        master_host=$master_host port=$port password=$password sentinel_quorum=$sentinel_quorum $RECONFIGURE_SENTINEL >> $SENTINEL_CONF
-    fi
-  fi
-  # restart redis-sentinel
-  /var/vcap/bosh/bin/monit restart redis-sentinel
 fi

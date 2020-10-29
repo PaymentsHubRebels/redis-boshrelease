@@ -3,6 +3,7 @@
 set -euf -o pipefail
 
 REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf
+DEFAULT_REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf.default
 REDIS_BOOTSTRAP=/var/vcap/jobs/redis-bootstrap/config/redis.conf
 SENTINEL_CONF=/var/vcap/store/redis-sentinel/config/sentinel.conf
 SENTINEL_BOOTSTRAP=/var/vcap/jobs/redis-bootstrap/config/sentinel.conf
@@ -13,6 +14,8 @@ if [ -f $REDIS_CONF ]; then
   if grep --silent "# bootstrapped" $REDIS_CONF; then
     echo Redis bootstrap is set already. Doing nothing.
   else
+    # backup the original redis conf
+    sp -f $REDIS_CONF $DEFAULT_REDIS_CONF
     cat $REDIS_BOOTSTRAP >> $REDIS_CONF
   fi
   # restart redis
