@@ -67,27 +67,6 @@ search_for_master() {
 
 master_host=$(identify_master $sentinel_port)
 
-# if the machine is a redis instance
-# setup $REDIS_CONF
-if [[ -f $REDIS_CONF && -n "${master_host}" ]]; then
-  # if it is the master do nothing else fix the slave
-  if [ "$master_host" == "$instance_ip" ]; then
-    echo "$master_host" == $instance_ip Seems I found the master. Doing nothing.
-  else
-    if grep --silent "# bootstrapped" $REDIS_CONF; then
-      cat $DEFAULT_REDIS_CONF > $TMP_REDIS_CONF
-      # run the template script and append it to $TMP_REDIS_CONF
-      master_host=$master_host port=$port $RECONFIGURE_REDIS >> $TMP_REDIS_CONF
-      # replace $REDIS_CONF with $TMP_REDIS_CONF
-      mv -f $TMP_REDIS_CONF $REDIS_CONF
-    else
-      master_host=$master_host port=$port $RECONFIGURE_REDIS >> $REDIS_CONF
-    fi
-    # restart redis
-    /var/vcap/bosh/bin/monit restart redis
-  fi
-fi
-
 # if the machine is a redis-sentinel instance
 # setup $SENTINEL_CONF
 if [ -f $SENTINEL_CONF ]; then
