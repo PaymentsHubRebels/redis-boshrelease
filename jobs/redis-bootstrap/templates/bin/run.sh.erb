@@ -15,7 +15,7 @@ if [ -f $REDIS_CONF ]; then
     echo Redis bootstrap is set already. Doing nothing.
   else
     # backup the original redis conf
-    sp -f $REDIS_CONF $DEFAULT_REDIS_CONF
+    cp -f $REDIS_CONF $DEFAULT_REDIS_CONF
     cat $REDIS_BOOTSTRAP >> $REDIS_CONF
   fi
   # restart redis
