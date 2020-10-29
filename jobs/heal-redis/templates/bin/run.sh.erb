@@ -108,4 +108,12 @@ if [ -f $SENTINEL_CONF ]; then
     # restart redis-sentinel
     /var/vcap/bosh/bin/monit restart redis-sentinel
   fi
+  if bpm list | grep redis-sentinel | grep failed; then
+    echo Sentinel failing. Reseting sentinel
+    cp -f $SENTINEL_ORIGINAL_CONF $TMP_REDIS_CONF
+    # run the template script and append it to $TMP_SENTINEL_CONF
+    master_host=$master_host port=$port password=$password sentinel_quorum=$sentinel_quorum $RECONFIGURE_SENTINEL >> $TMP_SENTINEL_CONF
+    # replace $SENTINEL_CONF with $TMP_SENTINEL_CONF
+    mv -f $TMP_SENTINEL_CONF $SENTINEL_CONF
+  fi
 fi
