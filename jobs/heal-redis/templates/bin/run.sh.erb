@@ -7,10 +7,10 @@ export PATH=$PATH:/var/vcap/packages/redis-5/bin:/var/vcap/jobs/bpm/bin
 REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf
 DEFAULT_REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf.default
 TMP_REDIS_CONF=$(mktemp)
-RECONFIGURE_REDIS=/var/vcap/jobs/redis-election/config/redis.conf.sh
+RECONFIGURE_REDIS=/var/vcap/jobs/heal-redis/config/redis.conf.sh
 SENTINEL_CONF=/var/vcap/store/redis-sentinel/config/sentinel.conf
 TMP_SENTINEL_CONF=(mktemp)
-RECONFIGURE_SENTINEL=/var/vcap/jobs/redis-election/config/sentinel.conf.sh
+RECONFIGURE_SENTINEL=/var/vcap/jobs/heal-redis/config/sentinel.conf.sh
 SENTINEL_ORIGINAL_CONF=/var/vcap/jobs/redis-sentinel/config/sentinel.conf
 
 chmod +x $RECONFIGURE_REDIS $RECONFIGURE_SENTINEL

@@ -1,5 +1,5 @@
 ---
-name: redis-election
+name: heal-redis
 
 templates:
   bin/run.sh.erb: bin/run
