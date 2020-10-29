@@ -2,7 +2,7 @@
 
 set -euf -o pipefail
 
-export PATH=$PATH:/var/vcap/packages/redis-5/bin
+export PATH=$PATH:/var/vcap/packages/redis-5/bin:/var/vcap/jobs/bpm/bin
 
 REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf
 TMP_REDIS_CONF=$(mktemp)
