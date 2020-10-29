@@ -2,6 +2,8 @@
 
 set -euf -o pipefail
 
+export PATH=$PATH:/var/vcap/packages/redis-5/bin:/var/vcap/jobs/bpm/bin
+
 REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf
 SENTINEL_CONF=/var/vcap/store/redis-sentinel/config/sentinel.conf
 
