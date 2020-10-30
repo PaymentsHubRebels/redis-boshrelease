@@ -38,7 +38,7 @@ instance_id=<%= spec.id %>
 
 for sentinel in <%= sentinel_link.instances.map {|s| s.address }.join(" ") %>; do
   set +e
-  master_host=$(redis-cli -h $sentinel -p <%= sentinel_port %> --raw sentinel masters | xargs -n 2 | grep "ip " | cut -d " " -f2)
+  master_host=$(redis-cli -h $sentinel -p <%= sentinel_port %> --raw sentinel masters 2>/dev/null | xargs -n 2 | grep "ip " | cut -d " " -f2)
   set -e
   if [ -n "$master_host" ]; then
     break

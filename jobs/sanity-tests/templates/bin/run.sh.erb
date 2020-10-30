@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -euf -o pipefail
-set -x
 
 export PATH=$PATH:/var/vcap/packages/redis-5/bin
 
@@ -23,7 +22,7 @@ password="<%= password %>"
 
 for sentinel in <%= sentinel_link.instances.map {|s| s.address }.join(" ") %>; do
   set +e
-  master_host=$(redis-cli -h $sentinel -p <%= sentinel_port %> --raw sentinel masters | xargs -n 2 | grep "ip " | cut -d " " -f2)
+  master_host=$(redis-cli -h $sentinel -p <%= sentinel_port %> --raw sentinel masters 2>/dev/null | xargs -n 2 | grep "ip " | cut -d " " -f2)
   set -e
   if [ -n "$master_host" ]; then
     break
@@ -32,30 +31,33 @@ done
 
 if [ -z "${master_host}" ]; then
   master_host=<%= p("master_host", bootstrap_host) %>
-  slave=$(redis-cli -h "${bootstrap_host}" -p "${port}" -a "${password}" client list type slave | grep addr | cut -d '=' -f 3 | cut -d ':' -f 1 | head -1)
+  slave=$(redis-cli -h "${bootstrap_host}" -p "${port}" -a "${password}" client list type slave 2>/dev/null | grep addr | cut -d '=' -f 3 | cut -d ':' -f 1 | head -1)
 else
-  slave=$(redis-cli -h "${master_host}" -p "${port}" -a "${password}" client list type slave | grep addr | cut -d '=' -f 3 | cut -d ':' -f 1 | head -1)
+  slave=$(redis-cli -h "${master_host}" -p "${port}" -a "${password}" client list type slave 2>/dev/null | grep addr | cut -d '=' -f 3 | cut -d ':' -f 1 | head -1)
 fi
 
 <% if p("production_mode") %>
 echo "-----"
 echo "TEST: Find last run on master"
-last_run=$(redis-cli -h "${master_host}" -p "${port}" -a "${password}" get sanity_test_last_run)
+last_run=$(redis-cli -h "${master_host}" -p "${port}" -a "${password}" get sanity_test_last_run 2>/dev/null)
 if [ -z "$last_run" ]; then
   echo "Main db does not have record of previous runs (expected to find "sanity_test_last_run" key)".
   echo "Possible wipe? Investigate more."
+  echo "FAILED"
   exit 100
+else
+  echo "PASSED"
 fi
 <% end %>
 
 echo "-----"
 echo "TEST: Timestampimg on master"
-redis-cli -h "${master_host}" -p "${port}" -a "${password}" set sanity_test_last_run "$(date '+%Y%m%d%H%M%S')"
+redis-cli -h "${master_host}" -p "${port}" -a "${password}" set sanity_test_last_run "$(date '+%Y%m%d%H%M%S')" 2>/dev/null
 
 echo "-----"
 echo "TEST: Write/read to master"
-redis-cli -h "${master_host}" -p "${port}" -a "${password}" set rats running
-rats=$(redis-cli -h "${master_host}" -p "${port}" -a "${password}" get rats)
+redis-cli -h "${master_host}" -p "${port}" -a "${password}" set rats running 2>/dev/null
+rats=$(redis-cli -h "${master_host}" -p "${port}" -a "${password}" get rats 2>/dev/null)
 
 if [[ "${rats}" == "running" ]]
 then
@@ -67,7 +69,7 @@ fi
 
 echo "-----"
 echo "TEST: Read from slave"
-rats=$(redis-cli -h $slave -p $port -a $password get rats)
+rats=$(redis-cli -h $slave -p $port -a $password get rats 2>/dev/null)
 
 if [[ "${rats}" == "running" ]]
 then
@@ -81,19 +83,19 @@ if [[ -n "$password" ]]
 then
   echo "-----"
   echo "TEST: Write/read to master: testing password requirement"
-  result="$(redis-cli -h $master_host -p $port -a "not-the-password" set rats testing-password-requirement)"
+  result="$(redis-cli -h $master_host -p $port -a "not-the-password" set rats testing-password-requirement 2>/dev/null)"
   if [[ "$result" != *"NOAUTH Authentication required."* ]]
   then
     echo "FAILED: Was able to write to master with incorrect password"
     EXITSTATUS=2
   fi
-  rats=$(redis-cli -h $master_host -p $port -a "different-password" get rats)
+  rats=$(redis-cli -h $master_host -p $port -a "different-password" get rats 2>/dev/null)
   if [[ "$rats" != *"NOAUTH Authentication required."* ]]
   then
     echo "FAILED: Was able to read from master with wrong password"
     EXITSTATUS=2
   fi
-  rats2=$(redis-cli -h $master_host -p $port get rats)
+  rats2=$(redis-cli -h $master_host -p $port get rats 2>/dev/null)
   if [[ "$rats2" != *"NOAUTH Authentication required."* ]]
   then
     echo "FAILED: Was able to read from master with no password"
@@ -124,7 +126,7 @@ then
   echo "-----"
   echo "TEST: Write/read to master: testing empty password requirement"
 
-  rats=$(redis-cli -h $master_host -p $port get rats)
+  rats=$(redis-cli -h $master_host -p $port get rats 2>/dev/null)
   if [[ "$rats" == *"NOAUTH Authentication required."* ]]
   then
     echo "FAILED: Was unable to read from master with no password"

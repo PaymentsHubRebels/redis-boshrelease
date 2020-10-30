@@ -39,7 +39,7 @@ identify_master() {
   # identify from sentinels which is the master ip and port
   for sentinel in <%= sentinel_link.instances.map {|s| s.address }.join(" ") %>; do
     set +e
-    master_host=$(redis-cli -h $sentinel -p $sentinel_port --raw sentinel masters | xargs -n 2 | grep "ip " | cut -d " " -f2)
+    master_host=$(redis-cli -h $sentinel -p $sentinel_port --raw sentinel masters 2>/dev/null | xargs -n 2 | grep "ip " | cut -d " " -f2)
     set -e
     if [ -n "$master_host" ]; then
       break
@@ -56,7 +56,7 @@ search_for_master() {
   # identify from sentinels which is the master ip and port
   for redis in <%= redis_link.instances.map {|s| s.address }.join(" ") %>; do
     set +e
-    if redis-cli -h $redis -p $port -a $password info | grep 'role:master'; then
+    if redis-cli -h $redis -p $port -a $password info 2>/dev/null | grep 'role:master'; then
       master_host=$redis
       break
     fi
