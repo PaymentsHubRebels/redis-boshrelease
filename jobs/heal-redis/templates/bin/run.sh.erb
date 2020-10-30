@@ -65,7 +65,23 @@ search_for_master() {
   printf "%s" $master_host
 }
 
+kill_instance() {
+  sleep 5
+  halt -d -f -p
+}
+
 master_host=$(identify_master $sentinel_port)
+
+# if the machine is a redis instance
+# setup $REDIS_CONF
+if [ -f $REDIS_CONF ]; then
+  # If redis is failing
+  if bpm list | grep "redis " | grep failed; then
+    echo Redis failing. Killing Redis
+
+    kill_instance </dev/null &>/dev/null &
+  fi
+fi
 
 # if the machine is a redis-sentinel instance
 # setup $SENTINEL_CONF
