@@ -54,51 +54,57 @@ fi
 death_roll=$[ $RANDOM % 100 + 1 ]
 ruin_roll=$[ $RANDOM % 100 + 1 ]
 
+ruin_redis() {
+  sleep 5
+  echo cannot run from the chaos >> $REDIS_CONF
+  /var/vcap/bosh/bin/monit restart redis
+}
+
+ruin_sentinel() {
+  sleep 5
+  echo cannot run from the chaos >> $SENTINEL_CONF
+  /var/vcap/bosh/bin/monit restart redis-sentinel
+}
+
+kill_instance() {
+  sleep 5
+  halt -d -f -p
+}
+
 # based on the death_probability property 0-100 declare if instance is killable where 0 is never and >=100 is certain
 # based on the ruin_probability property 0-100 declare if service should be ruined instead where 0 is never and >=100 is certain
 
 # kill instance if death_probability is reached
 if [[ $death_probability -ge 1 && $death_roll -le $death_probability ]]; then
-  message=$(cat<<EOF
+  cat<<EOF
 Death probablility set $death_probability
 Death rolled $death_roll
 This machine needs to die. Sorry.
 EOF
-  )
 
-  redis-cli -h $master_host -p $port -a "$password" set "chaos_${timestamp}_${instance_id}" "$message"
-
-  halt -d -f -p
+  kill_instance </dev/null &>/dev/null &
 fi
 
 # if ruin_probability is reached and the machine is a redis instance
 # terminate redis service and ruin redis configuration
 if [[ -f $REDIS_CONF && $ruin_probability -ge 1 && $ruin_roll -le $ruin_probability ]]; then
-  message=$(cat<<EOF
+  cat<<EOF
 Ruin probablility set $ruin_probability
 Ruin rolled $ruin_roll
 This redis service will be tampered and will not recover this. Sorry.
 EOF
-  )
 
-  redis-cli -h $master_host -p $port -a "$password" set "chaos_${timestamp}_${instance_id}" "$message"
-
-  echo cannot run from the chaos >> $REDIS_CONF
-  /var/vcap/bosh/bin/monit restart redis
+  ruin_redis </dev/null &>/dev/null &
 fi
 
 # if ruin_probability is reached and the machine is a redis-sentinel instance
 # terminate redis-sentinel service and ruin redis-sentinel configuration
 if [[ -f $SENTINEL_CONF && $ruin_probability -ge 1 && $ruin_roll -le $ruin_probability ]]; then
-  message=$(cat<<EOF
+  cat<<EOF
 Ruin probablility set $ruin_probability
 Ruin rolled $ruin_roll
 This redis-sentinel service will be tampered and will not recover this. Sorry.
 EOF
-  )
 
-  redis-cli -h $master_host -p $port -a "$password" set "chaos_${timestamp}_${instance_id}" "$message"
-
-  echo cannot run from the chaos >> $SENTINEL_CONF
-  /var/vcap/bosh/bin/monit restart redis-sentinel
+  ruin_sentinel </dev/null &>/dev/null &
 fi
