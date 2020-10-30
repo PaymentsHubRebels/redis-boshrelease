@@ -37,6 +37,21 @@ else
   slave=$(redis-cli -h "${master_host}" -p "${port}" -a "${password}" client list type slave | grep addr | cut -d '=' -f 3 | cut -d ':' -f 1 | head -1)
 fi
 
+<% if p("production_mode") %>
+echo "-----"
+echo "TEST: Find last run on master"
+last_run=$(redis-cli -h "${master_host}" -p "${port}" -a "${password}" get sanity_test_last_run)
+if [ -z "$last_run" ]; then
+  echo "Main db does not have record of previous runs (expected to find "sanity_test_last_run" key)".
+  echo "Possible wipe? Investigate more."
+  exit 100
+fi
+<% end %>
+
+echo "-----"
+echo "TEST: Timestampimg on master"
+redis-cli -h "${master_host}" -p "${port}" -a "${password}" set sanity_test_last_run "$(date '+%Y%m%d%H%M%S')"
+
 echo "-----"
 echo "TEST: Write/read to master"
 redis-cli -h "${master_host}" -p "${port}" -a "${password}" set rats running

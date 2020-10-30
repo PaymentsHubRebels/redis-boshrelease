@@ -13,3 +13,7 @@ consumes:
 properties:
   master_host:
     description: The redis master IP or hostname.
+
+  production_mode:
+    description: If true sanity testing is looking for its previous run recording in redis data. If that recording is not there it will fail. That would cover the possibility of data wipe.
+    default: false
