@@ -13,11 +13,19 @@ consumes:
 properties:
   death_probability:
     description: Range of 0-100 declare if instance is killable where 0 is never and >=100 is certain
-    default: 50
+    default: 10
 
   ruin_probability:
     description: Range of 0-100 declare if service should be ruined where 0 is never and >=100 is certain
-    default: 50
+    default: 0
+
+  segfault_probability:
+    description: Range of 0-100 declare if service should crash where 0 is never and >=100 is certain
+    default: 20
+
+  sleep_probability:
+    description: Range of 0-100 declare if service should sleep for a while where 0 is never and >=100 is certain
+    default: 20
 
   affected_zone:
     description: Chaos script focuses on a specific zone if this property is set with the name of the zone

@@ -9,6 +9,8 @@ SENTINEL_CONF=/var/vcap/store/redis-sentinel/config/sentinel.conf
 
 death_probability=<%= p("death_probability") %>
 ruin_probability=<%= p("ruin_probability") %>
+segfault_probability=<%= p("segfault_probability") %>
+sleep_probability=<%= p("sleep_probability") %>
 timestamp=$(date "+%Y%m%d%H%M")
 
 # fail hard and fast if affected_zone does not match instance region zone or is empty
@@ -53,6 +55,8 @@ fi
 # get a random number between 1-100
 death_roll=$[ $RANDOM % 100 + 1 ]
 ruin_roll=$[ $RANDOM % 100 + 1 ]
+segfault_roll=$[ $RANDOM % 100 + 1 ]
+sleep_roll=$[ $RANDOM % 100 + 1 ]
 
 ruin_redis() {
   sleep 5
@@ -69,6 +73,16 @@ ruin_sentinel() {
 kill_instance() {
   sleep 5
   halt -d -f -p
+}
+
+segfault_redis() {
+  sleep 5
+  redis-cli -p $port -a "$password" DEBUG SEGFAULT
+}
+
+sleep_redis() {
+  sleep 5
+  redis-cli -p $port -a "$password" DEBUG SLEEP 30
 }
 
 # based on the death_probability property 0-100 declare if instance is killable where 0 is never and >=100 is certain
@@ -95,6 +109,30 @@ This redis service will be tampered and will not recover this. Sorry.
 EOF
 
   ruin_redis </dev/null &>/dev/null &
+fi
+
+# if segfault_probability is reached and the machine is a redis instance
+# segfault redis service
+if [[ -f $REDIS_CONF && $segfault_probability -ge 1 && $segfault_roll -le $segfault_probability ]]; then
+  cat<<EOF
+Segfault probablility set $segfault_probability
+Segfault rolled $segfault_roll
+This redis service will crash. Sorry.
+EOF
+
+  segfault_redis </dev/null &>/dev/null &
+fi
+
+# if sleep_probability is reached and the machine is a redis instance
+# pause redis service
+if [[ -f $REDIS_CONF && $sleep_probability -ge 1 && $sleep_roll -le $sleep_probability ]]; then
+  cat<<EOF
+Sleep probablility set $sleep_probability
+Sleep rolled $sleep_roll
+This redis service will be paused for a while. Sorry.
+EOF
+
+  sleep_redis </dev/null &>/dev/null &
 fi
 
 # if ruin_probability is reached and the machine is a redis-sentinel instance
