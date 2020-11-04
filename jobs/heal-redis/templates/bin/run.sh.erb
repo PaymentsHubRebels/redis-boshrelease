@@ -48,53 +48,35 @@ identify_master() {
   printf "%s" $master_host
 }
 
-search_for_master() {
-  local master_host=""
-  local port=$1
-  local password=$1
-
-  # identify from sentinels which is the master ip and port
-  for redis in <%= redis_link.instances.map {|s| s.address }.join(" ") %>; do
-    set +e
-    if redis-cli -h $redis -p $port -a $password info 2>/dev/null | grep 'role:master'; then
-      master_host=$redis
-      break
-    fi
-    set -e
-  done
-  printf "%s" $master_host
-}
-
-kill_instance() {
-  sleep 5
-  halt -d -f -p
-}
-
 master_host=$(identify_master $sentinel_port)
+if [ -z "${master_host}" ]; then
+  echo "Reseting master to bootsrtrap $bootstrap_host"
+  master_host=$bootstrap_host
+fi
 
 # if the machine is a redis instance
 # setup $REDIS_CONF
 if [ -f $REDIS_CONF ]; then
-  # If redis is failing
-  if bpm list | grep "redis " | grep failed; then
-    echo Redis failing. Killing Redis
-
-    kill_instance </dev/null &>/dev/null &
+  if grep --silent "# bootstrapped" $REDIS_CONF; then
+    echo Redis bootstrap is set already. Doing nothing.
+  else
+    # use the original redis conf
+    cp -f $DEFAULT_REDIS_CONF $TMP_REDIS_CONF
+    master_host=$master_host port=$port $RECONFIGURE_REDIS >> $TMP_REDIS_CONF
+    mv -f $TMP_REDIS_CONF $REDIS_CONF
   fi
+  # restart redis
+  /var/vcap/bosh/bin/monit restart redis
 fi
+
 
 # if the machine is a redis-sentinel instance
 # setup $SENTINEL_CONF
 if [ -f $SENTINEL_CONF ]; then
-  # None of the sentinels knows a master do a full reset while asking redis instead
-  if [ -z "${master_host}" ]; then
-    echo Could not find a proper master. Reseting sentinel
-    master_host=$(search_for_master $port "$password")
-    if [ -z "$master_host"]; then
-      echo "None of the redis instances declared itself as master. Reseting master to bootsrtrap $bootstrap_host"
-      master_host=$bootstrap_host
-    fi
-    cp -f $SENTINEL_ORIGINAL_CONF $TMP_REDIS_CONF
+  if grep --silent "# bootstrapped" $SENTINEL_CONF; then
+    echo Sentinel bootstrap is set already. Doing nothing.
+  else
+    cp -f $SENTINEL_ORIGINAL_CONF $TMP_SENTINEL_CONF
     # run the template script and append it to $TMP_SENTINEL_CONF
     master_host=$master_host port=$port password=$password sentinel_quorum=$sentinel_quorum $RECONFIGURE_SENTINEL >> $TMP_SENTINEL_CONF
     # replace $SENTINEL_CONF with $TMP_SENTINEL_CONF
