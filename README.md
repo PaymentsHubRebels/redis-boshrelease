@@ -46,6 +46,8 @@ bosh deploy redis-boshrelease/manifests/redis.yml -o <(./manifests/operators/pic
 Redis Sentinel provides high availability for Redis. In this bosh release, you can include the redis-sentinel job to manage failover for 2 or more Redis instances in replication mode.
 In order for sentinels to function correctly the initialisation of the cluster happens from an idempotent errand called `redis-bootstrap`. `redis-bootstrap` needs to run the first time the cluster gets initialised. On subsequent calls redis-bootstrap will enforce the master based on the will of `redis-sentinels`.
 
+Persistent disk is required in case of sentinels to make sure state is always persisted.
+
 **Note: Set "bind_static_ip" to true using the redis-sentinel job.**
 
 ```plain
@@ -60,6 +62,7 @@ In order for sentinels to function correctly the initialisation of the cluster h
   properties:
     bind_static_ip: true
     password: ((redis_password)
+  persistent_disk: ((disk_size))
 ```
 
 ### Update
