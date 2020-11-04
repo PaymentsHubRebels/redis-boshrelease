@@ -2,11 +2,75 @@
 
 set -euf -o pipefail
 
+export PATH=$PATH:/var/vcap/packages/redis-5/bin:/var/vcap/jobs/bpm/bin
+
 REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf
 DEFAULT_REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf.default
-REDIS_BOOTSTRAP=/var/vcap/jobs/redis-bootstrap/config/redis.conf
+TMP_REDIS_CONF=$(mktemp)
+RECONFIGURE_REDIS=/var/vcap/jobs/redis-bootstrap/config/redis.conf.sh
 SENTINEL_CONF=/var/vcap/store/redis-sentinel/config/sentinel.conf
-SENTINEL_BOOTSTRAP=/var/vcap/jobs/redis-bootstrap/config/sentinel.conf
+TMP_SENTINEL_CONF=(mktemp)
+RECONFIGURE_SENTINEL=/var/vcap/jobs/redis-bootstrap/config/sentinel.conf.sh
+SENTINEL_ORIGINAL_CONF=/var/vcap/jobs/redis-sentinel/config/sentinel.conf
+
+chmod +x $RECONFIGURE_REDIS $RECONFIGURE_SENTINEL
+
+<%
+redis_link = link("redis")
+sentinel_link = link("redis-sentinel")
+redis_port = redis_link.p("port")
+sentinel_port = sentinel_link.p("sentinel.port")
+password = redis_link.p("password")
+bootstrap_host = redis_link.instances.find { |redis| redis.bootstrap }.address
+sentinel_quorum = sentinel_link.p("sentinel.quorum")
+%>
+
+bootstrap_host=<%= bootstrap_host %>
+port="<%= redis_port %>"
+password="<%= password %>"
+sentinel_quorum=<%= sentinel_quorum %>
+sentinel_port=<%= sentinel_port %>
+instance_ip=<%= spec.ip %>
+
+identify_master() {
+  local master_host=""
+  local sentinel_port=$1
+
+  # identify from sentinels which is the master ip and port
+  for sentinel in <%= sentinel_link.instances.map {|s| s.address }.join(" ") %>; do
+    set +e
+    master_host=$(redis-cli -h $sentinel -p $sentinel_port --raw sentinel masters 2>/dev/null | xargs -n 2 | grep "ip " | cut -d " " -f2)
+    set -e
+    if [ -n "$master_host" ]; then
+      break
+    fi
+  done
+  printf "%s" $master_host
+}
+
+setup_redis() {
+  # use the original redis conf
+  cp -f $DEFAULT_REDIS_CONF $TMP_REDIS_CONF
+  # run the template script and append it to $TMP_REDIS_CONF
+  master_host=$master_host port=$port $RECONFIGURE_REDIS >> $TMP_REDIS_CONF
+  # replace $REDIS_CONF with $TMP_REDIS_CONF
+  mv -f $TMP_REDIS_CONF $REDIS_CONF
+}
+
+setup_sentinel() {
+  # use the original sentinel conf
+  cp -f $SENTINEL_ORIGINAL_CONF $TMP_SENTINEL_CONF
+  # run the template script and append it to $TMP_SENTINEL_CONF
+  master_host=$master_host port=$port password=$password sentinel_quorum=$sentinel_quorum $RECONFIGURE_SENTINEL >> $TMP_SENTINEL_CONF
+  # replace $SENTINEL_CONF with $TMP_SENTINEL_CONF
+  mv -f $TMP_SENTINEL_CONF $SENTINEL_CONF
+}
+
+master_host=$(identify_master $sentinel_port)
+if [ -z "${master_host}" ]; then
+  echo "Reseting master to bootsrtrap $bootstrap_host"
+  master_host=$bootstrap_host
+fi
 
 # if the machine is a redis instance
 # setup $REDIS_CONF
@@ -14,13 +78,12 @@ if [ -f $REDIS_CONF ]; then
   if grep --silent "# bootstrapped" $REDIS_CONF; then
     echo Redis bootstrap is set already. Doing nothing.
   else
-    # backup the original redis conf
-    cp -f $REDIS_CONF $DEFAULT_REDIS_CONF
-    cat $REDIS_BOOTSTRAP >> $REDIS_CONF
+    setup_redis
   fi
   # restart redis
   /var/vcap/bosh/bin/monit restart redis
 fi
+
 
 # if the machine is a redis-sentinel instance
 # setup $SENTINEL_CONF
@@ -28,8 +91,14 @@ if [ -f $SENTINEL_CONF ]; then
   if grep --silent "# bootstrapped" $SENTINEL_CONF; then
     echo Sentinel bootstrap is set already. Doing nothing.
   else
-    cat $SENTINEL_BOOTSTRAP >> $SENTINEL_CONF
+    setup_sentinel
+    # restart redis-sentinel
+    /var/vcap/bosh/bin/monit restart redis-sentinel
   fi
-  # restart redis-sentinel
-  /var/vcap/bosh/bin/monit restart redis-sentinel
+  if bpm list | grep redis-sentinel | grep failed; then
+    echo Sentinel failing. Reseting sentinel
+    setup_sentinel
+    # restart redis-sentinel
+    /var/vcap/bosh/bin/monit restart redis-sentinel
+  fi
 fi

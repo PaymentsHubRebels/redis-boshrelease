@@ -3,8 +3,8 @@ name: redis-bootstrap
 
 templates:
   bin/run.sh.erb: bin/run
-  config/redis.conf.erb: config/redis.conf
-  config/sentinel.conf.erb: config/sentinel.conf
+  config/redis.conf.sh: config/redis.conf.sh
+  config/sentinel.conf.sh: config/sentinel.conf.sh
 
 consumes:
 - name: redis

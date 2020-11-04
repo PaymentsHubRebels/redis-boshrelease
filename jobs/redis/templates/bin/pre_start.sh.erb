@@ -3,6 +3,13 @@
 set -u # report the usage of uninitialized variables
 set -x
 
+REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf
+DEFAULT_REDIS_CONF=/var/vcap/jobs/redis/config/redis.conf.default
+
+if [ ! -f $DEFAULT_REDIS_CONF ]; then
+  cp -f $REDIS_CONF $DEFAULT_REDIS_CONF
+fi
+
 # Best practice per https://redis.io/topics/admin
 chpst -u root:root echo never > /sys/kernel/mm/transparent_hugepage/enabled
 
