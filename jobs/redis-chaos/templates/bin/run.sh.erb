@@ -57,6 +57,8 @@ death_roll=$[ $RANDOM % 100 + 1 ]
 ruin_roll=$[ $RANDOM % 100 + 1 ]
 segfault_roll=$[ $RANDOM % 100 + 1 ]
 sleep_roll=$[ $RANDOM % 100 + 1 ]
+sentinel_cae_roll=$[ $RANDOM % 100 + 1 ]
+sentinel_cap_roll=$[ $RANDOM % 100 + 1 ]
 
 ruin_redis() {
   sleep 5
@@ -145,4 +147,31 @@ This redis-sentinel service will be tampered and will not recover this. Sorry.
 EOF
 
   ruin_sentinel </dev/null &>/dev/null &
+  exit 0
+fi
+
+# if sentinel_cae_probability is reached and the machine is a redis-sentinel instance
+# simulate sentinel failure after election
+if [[ -f $SENTINEL_CONF && $sentinel_cae_probability -ge 1 && $sentinel_cae_roll -le $sentinel_cae_probability ]]; then
+  cat<<EOF
+Sentinel simulated failure from crash after election probablility set $sentinel_cae_probability
+Sentinel simulated failure from crash after election rolled $sentinel_cae_roll
+This redis-sentinel service will crash after election. Sorry.
+EOF
+
+  redis-cli -p <%= sentinel_port %> SENTINEL SIMULATE-FAILURE crash-after-election </dev/null &>/dev/null &
+  exit 0
+fi
+
+# if sentinel_cap_probability is reached and the machine is a redis-sentinel instance
+# simulate sentinel failure after promotion
+if [[ -f $SENTINEL_CONF && $sentinel_cap_probability -ge 1 && $sentinel_cap_roll -le $sentinel_cap_probability ]]; then
+  cat<<EOF
+Sentinel simulated failure from crash after promotion probablility set $sentinel_cap_probability
+Sentinel simulated failure from crash after promotion rolled $sentinel_cap_roll
+This redis-sentinel service will crash after promotion. Sorry.
+EOF
+
+  redis-cli -p <%= sentinel_port %> SENTINEL SIMULATE-FAILURE crash-after-promotion </dev/null &>/dev/null &
+  exit 0
 fi
