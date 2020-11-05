@@ -52,7 +52,9 @@ setup_redis() {
   # use the original redis conf
   cp -f $DEFAULT_REDIS_CONF $TMP_REDIS_CONF
   # run the template script and append it to $TMP_REDIS_CONF
-  master_host=$master_host port=$port $RECONFIGURE_REDIS >> $TMP_REDIS_CONF
+  if [ "$master_host" != "$instance_ip" ];
+    master_host=$master_host port=$port $RECONFIGURE_REDIS >> $TMP_REDIS_CONF
+  fi
   # replace $REDIS_CONF with $TMP_REDIS_CONF
   mv -f $TMP_REDIS_CONF $REDIS_CONF
 }
