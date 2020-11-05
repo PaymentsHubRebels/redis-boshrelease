@@ -99,6 +99,7 @@ This machine needs to die. Sorry.
 EOF
 
   kill_instance </dev/null &>/dev/null &
+  exit 0
 fi
 
 # if ruin_probability is reached and the machine is a redis instance
@@ -111,6 +112,7 @@ This redis service will be tampered and will not recover this. Sorry.
 EOF
 
   ruin_redis </dev/null &>/dev/null &
+  exit 0
 fi
 
 # if segfault_probability is reached and the machine is a redis instance
@@ -123,6 +125,7 @@ This redis service will crash. Sorry.
 EOF
 
   segfault_redis </dev/null &>/dev/null &
+  exit 0
 fi
 
 # if sleep_probability is reached and the machine is a redis instance
@@ -135,6 +138,7 @@ This redis service will be paused for a while. Sorry.
 EOF
 
   sleep_redis </dev/null &>/dev/null &
+  exit 0
 fi
 
 # if ruin_probability is reached and the machine is a redis-sentinel instance
