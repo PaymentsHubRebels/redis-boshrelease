@@ -12,27 +12,27 @@ consumes:
 
 properties:
   death_probability:
-    description: Range of 0-100 declare if instance is killable where 0 is never and >=100 is certain
+    description: Range of 0-100 declare if instance is killable where 0 is never and >=100 is certain. This exposes VM destruction.
     default: 10
 
   ruin_probability:
-    description: Range of 0-100 declare if service should be ruined where 0 is never and >=100 is certain
+    description: Range of 0-100 declare if service should be ruined where 0 is never and >=100 is certain. This exposes service misconfiguration.
     default: 0
 
   segfault_probability:
-    description: Range of 0-100 declare if service should crash where 0 is never and >=100 is certain
+    description: Range of 0-100 declare if service should crash where 0 is never and >=100 is certain. This exposes redis service crash.
     default: 20
 
   sleep_probability:
-    description: Range of 0-100 declare if service should sleep for a while where 0 is never and >=100 is certain
+    description: Range of 0-100 declare if service should sleep for a while where 0 is never and >=100 is certain. This exposes a quite busy redis service and probable network delay or firewall issue.
     default: 20
 
   sentinel_cae_probability:
-    description: Range of 0-100 declare if sentinel service should simulate crash after election, where 0 is never and >=100 is certain
+    description: Range of 0-100 declare if sentinel service should simulate crash after election, where 0 is never and >=100 is certain. This exposes a sentinel crash.
     default: 20
 
   sentinel_cap_probability:
-    description: Range of 0-100 declare if sentinel service should simulate crash after promotion, where 0 is never and >=100 is certain
+    description: Range of 0-100 declare if sentinel service should simulate crash after promotion, where 0 is never and >=100 is certain. This exposes a sentinel crash.
     default: 20
 
   affected_zone:
